@@ -8,20 +8,8 @@ THISDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # # ---- Use default compiler (g++) -----
 
 #cd $THISDIR
-#mkdir -p build
-#cd build
-#cmake ..
-#make
-
-# ---- Use clang since g++ has internal error ------
-
-sudo apt-get install -y clang
-
-sudo update-alternatives --set c++ /usr/bin/clang++
-
-#cd $THISDIR
 cd /vagrant
-mkdir -p build-clang
-cd build-clang
+mkdir -p build
+cd build
 cmake ..
 make
