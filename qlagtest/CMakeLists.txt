@@ -16,6 +16,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set( QT5_DYNAMIC_INST "C:/Projects/qt5_msvc2010/5.0.2/msvc2010_opengl" )
     set( QT5_STATIC_INST "C:/Users/pasieka/Projects/qt5/qtbase" )
     set( QT5_INST ${QT5_DYNAMIC_INST} )
+    set( QT5_LIBS Qt5::WinMain )
 
     # WINDOWS: set path to cmake find modules
     set(CMAKE_PREFIX_PATH ${QT5_INST} )
@@ -42,11 +43,9 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(CMAKE_PREFIX_PATH ${QT5_INST} )
     set(CMAKE_MODULE_PATH "${QT5_INST}/cmake;${CMAKE_MODULE_PATH}" )
 
-    find_package(Eigen3 REQUIRED )
-    set( QWT_INC_PATH "/usr/include/qwt")
+    set(EIGEN3_INCLUDE_DIR "/usr/include/eigen3") # ubuntu: libeigen3-dev
+    set(QWT_INC_PATH "/usr/include/qwt") # ubuntu: libqwt-dev
     find_library( QWT_LIBRARY NAMES qwt PATHS "/usr/lib" )
-
-
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 
@@ -92,7 +91,7 @@ set (PRJ_INCLUDE "src" )
 add_executable( lagtest WIN32 ${RRJ_SOURCES} )
 include_directories(${PRJ_INCLUDE} ${OPENGL_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${QWT_INC_PATH} )
 
-target_link_libraries(lagtest ${OPENGL_LIBRARIES} ${QWT_LIBRARY}  Qt5::WinMain )
+target_link_libraries(lagtest ${OPENGL_LIBRARIES} ${QWT_LIBRARY} ${QT5_LIBS} )
 qt5_use_modules(lagtest Widgets OpenGL Network)
 
 # ============ Test files ============== #
