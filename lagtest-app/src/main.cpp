@@ -73,8 +73,9 @@ int main(int argc, char **argv)
 
 //#define FLASH
 #ifdef FLASH
-    LagTest::programArduino( QString::fromLocal8Bit(argv[1]), QString::fromLocal8Bit(argv[2]) );
-    //exit(0);
+    Flasher flashIt( QString::fromLocal8Bit(argv[1]), QString::fromLocal8Bit(argv[2]) );
+    //Flasher flashIt( "tools/avrdude.exe", "firmware.hex" );
+    exit(0);
 #else
     //RingBuffer<char>::test();
     //return 1;

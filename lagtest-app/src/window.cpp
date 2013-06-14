@@ -57,6 +57,7 @@
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QPainter>
+#include <QFont>
 
 //Window::Window(enum drawingType drawing, TimeModel *tm, RingBuffer<screenFlip> *screenFlips)
 Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
@@ -391,6 +392,13 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
     screenFlip sf;
     sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
     sf.local = this->clock->getCurrentTime();
+
+    if( !this->timer->isActive() )
+    {
+        painter.setFont( QFont("Times", 20, QFont::Bold) );
+        painter.setPen( Qt::red );
+        painter.drawText(r, Qt::AlignCenter, tr("Start by pressing Space Bar"));
+    }
 
     this->store->put( &sf );
 }

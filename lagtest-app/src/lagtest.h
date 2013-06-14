@@ -18,6 +18,7 @@ class LagTest : public QObject
 {    
     Q_OBJECT
 public:
+    explicit LagTest() { }; //Only here to make Flasher easier
     explicit LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod);
     virtual ~LagTest();
 
@@ -32,21 +33,31 @@ public slots:
     void recvSerialMsg(QString msg);
     void recvSerialError(QString msg);
 
-public:
-    std::vector<QString> discoverComPorts();
-    int programArduino(QString avrDudePath, QString pathToFirmware, QString port=QString() );
-    QString makeUserSelectPort();
-
 protected:
+    QString getOS();
     bool loadSettings();
     bool testPort(QString port);
     void doNewVersionCheck();
     void setupLogWindow();
 
+    std::vector<QString> discoverComPorts();
+    int programArduino(QString avrDudePath, QString pathToFirmware, QString port=QString() );
+    QString makeUserSelectPort();
+
     QSettings* settings;
     LatencyModel* lm;
     SerialPortHandler* serial;
     Window* w;
+};
+
+
+class Flasher : LagTest
+{
+    Q_OBJECT
+public:
+    explicit Flasher(QString avrDudePath, QString pathToFirmware, QString port=QString()) : LagTest() {
+        programArduino( avrDudePath, pathToFirmware, port );
+    }
 };
 
 #endif // LAGTEST_H

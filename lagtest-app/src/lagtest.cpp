@@ -82,6 +82,8 @@ LagTest::~LagTest()
 {
 }
 
+
+
 QPlainTextEdit* logWindow = NULL;
 
 
@@ -139,8 +141,11 @@ void LagTest::generateReport()
     text.append( s.sprintf("Measurement duration:   %3.2f [sec]\n" , this->lm->getMeasurementDuration() / 1e9 ) );
 
     text.append( "\n" );
+    text.append( tr("Operating System:  %1 \n").arg(this->getOS()) );
+    text.append( "\n" );
     text.append( tr("Display Vendor: XXXXXXX \n") );
     text.append( tr("Display Model:  XXXXXXX \n") );
+
 
     text.append( "\n" );
     text.append( tr("Report generated with LagTest v%1 \n").arg( QCoreApplication::applicationVersion() ) );
@@ -157,6 +162,37 @@ void LagTest::generateReport()
         QMessageBox::warning(0, tr("Write Error"), tr("Writing Protocol failed!") , QMessageBox::Ok, QMessageBox::NoButton);
     }
     f.close();
+}
+
+QString LagTest::getOS()
+{
+    qDebug( "System gets %d" , QSysInfo::WordSize );
+#ifdef Q_OS_WIN
+    switch( QSysInfo::windowsVersion() )
+    {
+        case QSysInfo::WV_2003:
+            //return ( QSysInfo::WordSize	== 32 ) ? "Windows 2003 (x86)" : "Windows 2003 (x64)" ;
+            return "Windows 2003";
+        break;
+
+        case QSysInfo::WV_VISTA:
+            //return ( QSysInfo::WordSize	== 32 ) ? "Windows Vista (x86)" : "Windows Vista (x64)" ;
+            return "Windows Vista";
+        break;
+
+        case QSysInfo::WV_WINDOWS7:
+            //return ( QSysInfo::WordSize	== 32 ) ? "Windows 7 (x86)" : "Windows 7 (x64)" ;
+            return "Windows 7";
+        break;
+
+        case QSysInfo::WV_WINDOWS8:
+            //return ( QSysInfo::WordSize	== 32 ) ? "Windows 8 (x86)" : "Windows 8 (x64)" ;
+            return "Windows 8";
+        break;
+    }
+#endif
+
+    return "UNKNOWN OS";
 }
 
 void LagTest::recvFlashAdruino()
