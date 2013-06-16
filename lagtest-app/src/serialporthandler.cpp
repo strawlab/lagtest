@@ -97,13 +97,13 @@ void SerialPortHandler::start()
 #define _CRT_SECURE_NO_WARNINGS
 #include "rs232.h"
 
-LagTestSerialPortComm::LagTestSerialPortComm(QString port, int bautRate,TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage) :
+LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage) :
     QObject(0),
     tm(tm),
     clock_storage(clock_storage),
     adc_storage(adc_storage),
     sendRequest(false),
-    bautRate(bautRate),    
+    baudRate(baudRate),    
     tR(0)
 {
     this->portN = this->getPortIdx(port);
@@ -141,7 +141,7 @@ void LagTestSerialPortComm::initSerialPort()
 {    
     QString s;
     this->sendDebugMsg(s.sprintf("Opening Com port %d ... ", portN+1));
-    if(RS232_OpenComport(portN, this->bautRate))
+    if(RS232_OpenComport(portN, this->baudRate))
     {        
         this->sendErrorMsg("Can not open Serial port.");
         throw std::exception();

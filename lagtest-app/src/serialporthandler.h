@@ -57,7 +57,7 @@ class LagTestSerialPortComm : public QObject
 {
     Q_OBJECT
 public:
-    explicit LagTestSerialPortComm(QString port, int bautRate, TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);
+    explicit LagTestSerialPortComm(QString port, int baudRate, TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);
     static int getPortIdx(QString portName);
 
 signals:
@@ -90,7 +90,7 @@ private:
 
     // Serial Port Config
     //QString port;
-    int bautRate;
+    int baudRate;
     int portN;
 
 };
