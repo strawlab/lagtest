@@ -2,9 +2,7 @@
 
 #include <QSettings>
 #include <QString>
-#include <QComboBox>
-#include <QVBoxLayout>
-#include <QEventLoop>
+#include <QInputDialog>
 #include <QProcess>
 
 #include "timemodel.h"
@@ -261,15 +259,20 @@ std::vector<QString> LagTest::discoverComPorts()
 
     qDebug("Discovering Serial Ports ...");
 
-    for(int i = 1; i < 16; i++){    //Only search for ports between COM6-COM16
+    for(int i = 0; i < 16; i++){    //Only search for ports between COM6-COM16
+        qDebug("Trying %d",i);
         if( !RS232_OpenComport(i, 9600) ){
             ports.push_back(i);
+	    qDebug("  port %d worked",i);
             RS232_CloseComport( i );
         }
     }
 
     #ifdef __linux__
-    assert(0 && "No linux implementation");
+        for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
+            sprintf(cbuffer, "port %d", (*it));
+            portsNames.push_back( QString( cbuffer ) );
+        }
     #else
         for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
             sprintf(cbuffer, "COM%d", (*it)+1);
@@ -288,32 +291,32 @@ void LagTest::receiveFlashArduino()
 
 QString LagTest::makeUserSelectPort()
 {
-    //Create a simple QWidget that contains a dropdown list of all serial ports
-    QWidget mainWindow;
-    QComboBox combo;
-    QVBoxLayout layout;
-    QEventLoop loop;
-    QLabel PortSelectMsg("Select the port arduino is connected to");
 
-    mainWindow.setWindowFlags(Qt::WindowTitleHint );
-    PortSelectMsg.setAlignment(Qt::AlignHCenter);
-    layout.addWidget( &PortSelectMsg, 0 );
-    layout.addWidget( &combo, 0 );
-    mainWindow.setLayout( &layout );
+    QStringList items;
 
     std::vector<QString> ports = discoverComPorts();
     for(std::vector<QString>::iterator it = ports.begin(); it != ports.end(); ++it) {
-        //qDebug("Found Port %s" , (*it).toStdString().c_str() );
-        combo.addItem(*it);
+        qDebug("Found Port %s" , (*it).toStdString().c_str() );
+	items << (*it).toStdString().c_str();
     }
-    QObject::connect(&combo, SIGNAL(activated(QString)), &loop, SLOT( quit() ));
 
-    mainWindow.show();
-    loop.exec();    //Wait till the user selects an entry
-    mainWindow.close();
+    QString result;
+    bool ok;
+    result = QInputDialog::getItem(w,
+				   QString("lagtest - select Arduino port"),
+				   QString("Select the port arduino is connected to"),
+				   items,
+				   0, // current index
+				   true, // editable
+				   &ok);
 
-    qWarning( "User selected Port %s " , combo.currentText().toStdString().c_str() );
-    return combo.currentText();
+    if (ok) {
+      qWarning( "User selected Port %s " , result.toStdString().c_str() );
+    } else {
+      qDebug( "no selection" );
+      result = QString("no selection");
+    }
+    return result;
 }
 
 int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString port)

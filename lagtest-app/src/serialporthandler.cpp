@@ -123,12 +123,10 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
 
     if( portName.length() >= 4)
     {
-        if( portName.contains("Com", Qt::CaseInsensitive)){
-            //qDebug("Detect COMXX");
+        if( portName.contains("COM", Qt::CaseSensitive)){
             idx = portName.right(portName.length()-3).toInt() - 1; //From Com11 , extract 11, convert it to int, rs232 starts counting from 0.
-        } else if( portName.contains("USB", Qt::CaseInsensitive) ){
-            //qDebug("Detect USBXX");
-            idx = portName.right(portName.length()-3).toInt() + 16; //From USB0 , extract 0, convert it to int, rs232 starts counting from 16.
+        } else if( portName.contains("port ", Qt::CaseSensitive) ){
+            idx = portName.right(portName.length()-5).toInt(); //From USB0 , extract 0, convert it to int, rs232 starts counting from 16.
         } else {
             //qWarning("Invalid port name!");
             fprintf(stderr, "Invalid port name!");
