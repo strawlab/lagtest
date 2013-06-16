@@ -48,6 +48,7 @@
 #include "timemodel.h"
 #include "ringbuffer.hpp"
 #include <vector>
+#include "latencymodel.h"
 
 class QwtPlot;
 class QwtPlotCurve;
