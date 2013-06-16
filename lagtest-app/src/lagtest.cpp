@@ -22,9 +22,6 @@
 
 
 #include <QDesktopServices>
-#include <QJsonDocument>
-#include <QJsonArray>
-#include <QJsonObject>
 #include <QVariantMap>
 #include <QAbstractButton>
 #include <QFile>
@@ -235,31 +232,14 @@ void LagTest::recvVersionCheckFinished(QNetworkReply *reply)
     if( reply->error() == QNetworkReply::NoError )
     {
         QByteArray d = reply->readAll();
-//        QString jraw("{\"version\": \"100.9\", \"changes\": [\"fancy new feature\", \"bugfix\"]}");
-//        d = QByteArray(jraw.toStdString().c_str());
 
-        qDebug("Jason parsing of [%s]", d.data());
-        QJsonObject jO = QJsonDocument::fromJson( d ).object();
-
-        QString version = jO.value("version").toString();
-        QJsonArray changes = jO.value("changes").toArray();
-        QString ch1 = changes.at(0).toString();
-        QString ch2 = changes.at(1).toString();
-        qDebug("version = %s , changes [%s , %s]" , version.toStdString().c_str() , ch1.toStdString().c_str() , ch2.toStdString().c_str() );
-
-        double verNew, verCur;
-        int major,minor,bfx;
-        sscanf( version.toStdString().c_str() , "%d.%d.%d." , &major, &minor, &bfx);
-        verNew = major + (minor/10.0) + (bfx / 100);
-
-        sscanf( QCoreApplication::applicationVersion().toStdString().c_str() , "%d.%d.%d." , &major, &minor, &bfx);
-        verCur = major + (minor/10.0) + (bfx / 100);
-
-        //qDebug("Version check: cur [%f] , new [%f]" , verCur, verNew);
-        if( verNew > verCur )
-        {
-            QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Version update", tr("New version available! %1 -> %2\n%3\n%4").arg(QCoreApplication::applicationVersion()).arg(version).arg(ch1).arg(ch2) \
-                                               ,QMessageBox::Ignore | QMessageBox::Ok);
+	QString this_version_json;
+	this_version_json.sprintf("{\"version\"': \"%s\"}", QCoreApplication::applicationVersion().toStdString().c_str());
+	QString available_version_json(d.data());
+	if (this_version_json != available_version_json) {
+	  QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Version update",
+					     tr("New version available! %1 -> %2").arg(this_version_json).arg(available_version_json),
+					     QMessageBox::Ignore | QMessageBox::Ok);
             box->button(QMessageBox::Ok)->setText("Update");
             int buttonPressed = box->exec();
             if( buttonPressed == QMessageBox::Ok ) {
@@ -270,7 +250,6 @@ void LagTest::recvVersionCheckFinished(QNetworkReply *reply)
     } else {
         qDebug( "Lagtest version check failed! %s\n " , reply->errorString().toStdString().c_str() );
     }
-
     reply->deleteLater();
 }
 
