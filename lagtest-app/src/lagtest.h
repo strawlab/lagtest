@@ -23,10 +23,10 @@ public:
     virtual ~LagTest();
 
 public slots:
-    void receiveFlashAdruino();
+    void receiveFlashArduino();
     void recvVersionCheckFinished(QNetworkReply*reply);
     void generateReport();
-    void recvFlashAdruino();
+    void recvFlashArduino();
     void recvShowLogWindow();
     void recvSelectPort();
 

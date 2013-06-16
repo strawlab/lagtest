@@ -82,7 +82,7 @@ private:
     RingBuffer<clockPair>* clock_storage;
     RingBuffer<adcMeasurement>* adc_storage;
 
-    //Needed for handling Adruino Clock requests
+    //Needed for handling Arduino Clock requests
     bool sendRequest;
     const static int ntimeRequests = 20;
     double timeRequests[ntimeRequests];

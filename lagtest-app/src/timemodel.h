@@ -9,8 +9,8 @@ using namespace std;
 using namespace Eigen;
 
 typedef struct{
-    uint16_t adruino_ticks;
-    uint32_t adruino_epoch;
+    uint16_t arduino_ticks;
+    uint32_t arduino_epoch;
     double local;
 } clockPair;
 
@@ -21,8 +21,8 @@ typedef struct{
 } screenFlip;
 
 typedef struct{
-    uint16_t adruino_ticks;
-    uint32_t adruino_epoch;
+    uint16_t arduino_ticks;
+    uint32_t arduino_epoch;
     uint8_t adc;
 } adcMeasurement;
 

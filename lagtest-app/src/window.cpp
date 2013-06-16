@@ -112,7 +112,7 @@ QMenuBar* Window::createMenu()
 
     QMenu* optionsMenu = new QMenu(tr("&Options"), this);
     QAction* selectPortAction = optionsMenu->addAction(tr("Select &Port"));
-    QAction* flashAction = optionsMenu->addAction(tr("Fl&ash Adruino"));
+    QAction* flashAction = optionsMenu->addAction(tr("Fl&ash Arduino"));
     QAction* plotAction = optionsMenu->addAction(tr("Show &graph"));
     QAction* showLogAction = optionsMenu->addAction(tr("Show &Logs"));
     menuBar->addMenu(optionsMenu);
@@ -123,7 +123,7 @@ QMenuBar* Window::createMenu()
     menuBar->addMenu(helpMenu);
 
     connect(exitAction, SIGNAL(triggered()), this, SLOT(quit()));
-    connect(flashAction, SIGNAL(triggered()), this, SIGNAL(flashAdruino()));
+    connect(flashAction, SIGNAL(triggered()), this, SIGNAL(flashArduino()));
     connect(writeProtocolAction, SIGNAL(triggered()), this, SIGNAL(generateReport()));
     connect(helpPageAction, SIGNAL(triggered()), this, SLOT(recvOpenHelpPage()));
     connect(plotAction, SIGNAL(triggered()), this, SLOT(rcvTogglePlot()));

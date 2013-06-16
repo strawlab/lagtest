@@ -27,16 +27,16 @@ double TimeModel::getCurrentTime()
 
 double TimeModel::toLocalTime( adcMeasurement adc)
 {
-    double adruinoClock = adc.adruino_epoch*(1<<16) + adc.adruino_ticks;
-    return adruinoClock*this->gain + this->offset;
+    double arduinoClock = adc.arduino_epoch*(1<<16) + adc.arduino_ticks;
+    return arduinoClock*this->gain + this->offset;
 }
 
 void TimeModel::update(clockPair cp)
 {
-    double adruinoClock = cp.adruino_epoch*(1<<16) + cp.adruino_ticks;
+    double arduinoClock = cp.arduino_epoch*(1<<16) + cp.arduino_ticks;
 
     cpCnt = (cpCnt + 1) % this->clockHistory ;
-    this->A(this->cpCnt, 0) = adruinoClock;
+    this->A(this->cpCnt, 0) = arduinoClock;
     this->b(this->cpCnt) = cp.local;
 
     this->x = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
@@ -48,7 +48,7 @@ void TimeModel::update(clockPair cp)
     //cout << "A: " << A << endl;
     //cout << "b: " << b << endl;
     //cout << "x: " << x << endl;
-    //qDebug("Test %g -> %g", adruinoClock, adruinoClock*gain + offset );
+    //qDebug("Test %g -> %g", arduinoClock, arduinoClock*gain + offset );
 }
 
 

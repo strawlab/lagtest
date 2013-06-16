@@ -43,7 +43,7 @@ void SerialPortHandler::createSerialPortCommunicator()
     try{
         this->serial = new LagTestSerialPortComm( this->port, 115200, this->tm, this->clock_storage, this->adc_storage );
 
-        // Setup period query for adruino clock
+        // Setup period query for arduino clock
         this->timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), serial, SLOT(sendClockRequest()));
         timer->start(requestPeriod);
@@ -188,19 +188,19 @@ void LagTestSerialPortComm::startCommunication()
     }
 
     nBuffer = 0;  //Number of unread bytes in the buffer
-    //qDebug("Adruino Frame length = %lld bytes", frameLength );
+    //qDebug("Arduino Frame length = %lld bytes", frameLength );
 
     while(1)
     {
         QCoreApplication::processEvents();  //If this is not called, no signals can be received by this thread
 
-        //If ordered, send an request to the adruino to return its current clock value
+        //If ordered, send an request to the arduino to return its current clock value
         if( this->sendRequest )
         {
             b[0] = 'P';
             b[1] = this->tR;
 
-            //sendDebugMsg("Sending request for Adruino Clock time ...");
+            //sendDebugMsg("Sending request for Arduino Clock time ...");
             this->write(b, 2);
 
             this->timeRequests[tR] = this->tm->getCurrentTime();
@@ -265,18 +265,18 @@ void LagTestSerialPortComm::startCommunication()
                     case 'H'://ADC measurement
                     {
                         adcM.adc = frame.value;
-                        adcM.adruino_epoch = frame.epoch;
-                        adcM.adruino_ticks = frame.ticks;
+                        adcM.arduino_epoch = frame.epoch;
+                        adcM.arduino_ticks = frame.ticks;
                         this->adc_storage->put( &adcM );
                         //qDebug("Received a adc measurement");
                         break;
                     }
                     case 'P': //Clock response
                     {
-                    //Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the adruino clock
+                    //Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
                         if( frame.value > this->ntimeRequests ){
-                            //qCritical("Adruino returns invalid reference id!");
-                            this->sendErrorMsg("Adruino returns invalid reference id!");
+                            //qCritical("Arduino returns invalid reference id!");
+                            this->sendErrorMsg("Arduino returns invalid reference id!");
                         } else {
                             sendTime = this->timeRequests[ frame.value ];
                             d1 = (now - sendTime)/2.0;
@@ -287,15 +287,15 @@ void LagTestSerialPortComm::startCommunication()
                                 d1 = 0;
                             }
                             cp.local = sendTime + d1;
-                            cp.adruino_epoch = frame.epoch;
-                            cp.adruino_ticks = frame.ticks;
+                            cp.arduino_epoch = frame.epoch;
+                            cp.arduino_ticks = frame.ticks;
                             this->clock_storage->put( &cp );
-                            //qDebug("Received a adruino clock msg for request %d from %g", frame.value, cp.local );
+                            //qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
                             break;
                         }
                     }
                     default:{
-                        //qDebug( "Unknown msg from adruino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+                        //qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
                     }
                 }
             } else {

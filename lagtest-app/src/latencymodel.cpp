@@ -326,7 +326,7 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
             {
                 this->adcData[sf.type][this->measurementCnter[sf.type]][i] = tsample.adc;
                 this->sampleTimes[i] = this->tm->toLocalTime( tsample ) - sf.local;
-                //qDebug("E: %g, T: %g, D: %d", tsample.adruino_epoch, tsample.adruino_ticks, tsample.adc);
+                //qDebug("E: %g, T: %g, D: %d", tsample.arduino_epoch, tsample.arduino_ticks, tsample.adc);
             } else {
                 qCritical("Not enough data in the ADC ringbuffer");
             }

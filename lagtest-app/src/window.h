@@ -95,7 +95,7 @@ signals:
     void startMeasurement();
     void stopMeasurement();
     void doReset();
-    void flashAdruino();
+    void flashArduino();
     void generateReport();
     void showLogWindow();
     void selectPort();

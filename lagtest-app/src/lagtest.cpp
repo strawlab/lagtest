@@ -37,29 +37,29 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod)
     //tm.testModelGenerator();
 
     RingBuffer<screenFlip>* screenFlips = new RingBuffer<screenFlip>(20);
-    RingBuffer<clockPair>* adruinoClock = new RingBuffer<clockPair>(100);
+    RingBuffer<clockPair>* arduinoClock = new RingBuffer<clockPair>(100);
     RingBuffer<adcMeasurement>* adcValues = new RingBuffer<adcMeasurement>(20000);
 
     this->loadSettings();
 
     //Make user define the serial port
-    QString port = settings->value("Adruino/Port").toString();
+    QString port = settings->value("Arduino/Port").toString();
 
     qDebug("Creating handler for serial port on %s...", port.toStdString().c_str() );
     // Setup Serial Port Reader
-    this->serial = new SerialPortHandler(port, clockSyncPeriod, tm, adruinoClock, adcValues);
-    this->lm = new LatencyModel(latencyUpdate, tm, screenFlips, adruinoClock, adcValues);
+    this->serial = new SerialPortHandler(port, clockSyncPeriod, tm, arduinoClock, adcValues);
+    this->lm = new LatencyModel(latencyUpdate, tm, screenFlips, arduinoClock, adcValues);
     this->w = new Window(tm, screenFlips);
 
     QObject::connect( w, SIGNAL(doReset()), lm, SLOT(reset()) );
     QObject::connect( w, SIGNAL(startMeasurement()), serial, SLOT(start()) );
     QObject::connect( w, SIGNAL(startMeasurement()), lm, SLOT(start()) );
     QObject::connect( w, SIGNAL(generateReport()), this, SLOT( generateReport() ) );
-    QObject::connect( w, SIGNAL(flashAdruino()), this, SLOT( recvFlashAdruino() ) );
+    QObject::connect( w, SIGNAL(flashArduino()), this, SLOT( recvFlashArduino() ) );
     QObject::connect( w, SIGNAL(showLogWindow()), this, SLOT( recvShowLogWindow() ) );
     QObject::connect( w, SIGNAL(selectPort()), this, SLOT( recvSelectPort() ) );
 
-    //QObject::connect( &w, &Window::flashAdruino, getAdruinoPort );
+    //QObject::connect( &w, &Window::flashArduino, getArduinoPort );
 
 
     QObject::connect( lm, SIGNAL(signalStableLatency()),        w, SLOT(receiveStableLatency()) );
@@ -204,17 +204,17 @@ QString LagTest::getOS()
     return "UNKNOWN OS";
 }
 
-void LagTest::recvFlashAdruino()
+void LagTest::recvFlashArduino()
 {
     //qDebug("Current path %s" , QCoreApplication::applicationDirPath().toStdString().c_str() );
-    programArduino( QCoreApplication::applicationDirPath().append("/tools/avrdude.exe"), QCoreApplication::applicationDirPath().append("/firmware.hex"), this->settings->value("Adruino/Port").toString());
+    programArduino( QCoreApplication::applicationDirPath().append("/tools/avrdude.exe"), QCoreApplication::applicationDirPath().append("/firmware.hex"), this->settings->value("Arduino/Port").toString());
 }
 
 void LagTest::recvSelectPort()
 {
     QString port = makeUserSelectPort();
     QSettings* settings = new QSettings("lagtest.ini", QSettings::IniFormat);
-    settings->setValue("Adruino/Port", port );
+    settings->setValue("Arduino/Port", port );
     settings->sync();
     delete(settings);
 }
@@ -280,9 +280,9 @@ std::vector<QString> LagTest::discoverComPorts()
     return portsNames;
 }
 
-void LagTest::receiveFlashAdruino()
+void LagTest::receiveFlashArduino()
 {
-    this->settings->beginGroup("Adruino");
+    this->settings->beginGroup("Arduino");
     settings->value("port");
 }
 
@@ -293,7 +293,7 @@ QString LagTest::makeUserSelectPort()
     QComboBox combo;
     QVBoxLayout layout;
     QEventLoop loop;
-    QLabel PortSelectMsg("Select the port adruino is connected to");
+    QLabel PortSelectMsg("Select the port arduino is connected to");
 
     mainWindow.setWindowFlags(Qt::WindowTitleHint );
     PortSelectMsg.setAlignment(Qt::AlignHCenter);
@@ -318,7 +318,7 @@ QString LagTest::makeUserSelectPort()
 
 int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString port)
 {
-    qDebug("Trying to flash adruino ...");
+    qDebug("Trying to flash arduino ...");
     char buffer[300];
     if( port.isEmpty() ){
         port = makeUserSelectPort();
@@ -341,9 +341,9 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
     // Store this settings for the normal program execution
     QSettings* settings = new QSettings("lagtest.ini", QSettings::IniFormat);
     QDir dir;
-    settings->setValue("Adruino/Port", port );
-    settings->setValue("Adruino/avrDudePath", dir.relativeFilePath( avrDudePath ) );
-    settings->setValue("Adruino/firmwarePath", dir.relativeFilePath( pathToFirmware ) );
+    settings->setValue("Arduino/Port", port );
+    settings->setValue("Arduino/avrDudePath", dir.relativeFilePath( avrDudePath ) );
+    settings->setValue("Arduino/firmwarePath", dir.relativeFilePath( pathToFirmware ) );
     settings->sync();
     delete(settings);
 
@@ -355,7 +355,7 @@ bool LagTest::loadSettings()
     this->settings = new QSettings("lagtest.ini", QSettings::IniFormat);
 
     //If we dont have this setting, or the port is not valid, let the user define a new port
-    if( !this->testPort( settings->value("Adruino/Port").toString() ))
+    if( !this->testPort( settings->value("Arduino/Port").toString() ))
     {
         qDebug("Port not valid, query user to specify new one.");
         QString nPort;
@@ -366,14 +366,14 @@ bool LagTest::loadSettings()
                 nPort = "";
             }
         } while( nPort.isEmpty() );
-        settings->setValue("Adruino/Port", nPort );
+        settings->setValue("Arduino/Port", nPort );
         settings->sync();
     }
 
     return true;
 
     //Create entries
-    //    settings->beginGroup("Adruino");
+    //    settings->beginGroup("Arduino");
     //        settings->setValue("Port", "COM11");
     //        settings->setValue("avrDudePath", "tools/avrdude.exe");
     //        settings->setValue("firmwarePath", "firmware.hex");
