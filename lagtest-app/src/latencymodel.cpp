@@ -56,8 +56,8 @@ void LatencyModel::resetHistory()
             this->adcData[WHITE_TO_BLACK][i][j] = -1;
             this->adcData[BLACK_TO_WHITE][i][j] = -1;
         }
-        emit signalNewMeassurementWindow( this->adcData[WHITE_TO_BLACK][i], this->avgAdcWindow[WHITE_TO_BLACK], this->sampleTimes, WHITE_TO_BLACK );
-        emit signalNewMeassurementWindow( this->adcData[BLACK_TO_WHITE][i], this->avgAdcWindow[BLACK_TO_WHITE], this->sampleTimes, BLACK_TO_WHITE );
+        emit signalNewMeasurementWindow( this->adcData[WHITE_TO_BLACK][i], this->avgAdcWindow[WHITE_TO_BLACK], this->sampleTimes, WHITE_TO_BLACK );
+        emit signalNewMeasurementWindow( this->adcData[BLACK_TO_WHITE][i], this->avgAdcWindow[BLACK_TO_WHITE], this->sampleTimes, BLACK_TO_WHITE );
     } 
     emit signalUpdate(this);
 
@@ -333,7 +333,7 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
 
         }
         //if( nMeasurements[sf.type] > measurementHistoryLength ){
-        emit signalNewMeassurementWindow( this->adcData[sf.type][this->measurementCnter[sf.type]], this->avgAdcWindow[sf.type], this->sampleTimes, sf.type );
+        emit signalNewMeasurementWindow( this->adcData[sf.type][this->measurementCnter[sf.type]], this->avgAdcWindow[sf.type], this->sampleTimes, sf.type );
         //}
     }
 

@@ -52,8 +52,8 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod)
     this->w = new Window(tm, screenFlips);
 
     QObject::connect( w, SIGNAL(doReset()), lm, SLOT(reset()) );
-    QObject::connect( w, SIGNAL(startMeassurement()), serial, SLOT(start()) );
-    QObject::connect( w, SIGNAL(startMeassurement()), lm, SLOT(start()) );
+    QObject::connect( w, SIGNAL(startMeasurement()), serial, SLOT(start()) );
+    QObject::connect( w, SIGNAL(startMeasurement()), lm, SLOT(start()) );
     QObject::connect( w, SIGNAL(generateReport()), this, SLOT( generateReport() ) );
     QObject::connect( w, SIGNAL(flashAdruino()), this, SLOT( recvFlashAdruino() ) );
     QObject::connect( w, SIGNAL(showLogWindow()), this, SLOT( recvShowLogWindow() ) );
@@ -66,7 +66,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod)
     QObject::connect( lm, SIGNAL(signalUnstableLatency()),      w, SLOT(receiveUnstableLatency()) );
     QObject::connect( lm, SIGNAL(signalInvalidLatency()),       w, SLOT(receiveInvalidLatency()) );
     QObject::connect( lm, SIGNAL(signalUpdate(LatencyModel*)),  w, SLOT(receiveLatencyUpdate(LatencyModel*)) );
-    QObject::connect( lm, SIGNAL(signalNewMeassurementWindow(uint8_t*,double*,double*,flip_type)), w, SLOT(receiveNewMeassurementWindow(uint8_t*,double*,double*,flip_type)) );
+    QObject::connect( lm, SIGNAL(signalNewMeasurementWindow(uint8_t*,double*,double*,flip_type)), w, SLOT(receiveNewMeasurementWindow(uint8_t*,double*,double*,flip_type)) );
 
 
     QObject::connect( serial, SIGNAL(sendDebugMsg(QString)),    this, SLOT(recvSerialMsg(QString)) );

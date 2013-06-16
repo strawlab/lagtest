@@ -43,7 +43,7 @@ signals:
     void signalUnstableLatency();
     void signalInvalidLatency();
     void signalUpdate(LatencyModel* lm);
-    void signalNewMeassurementWindow(uint8_t* window, double* avgWindow, double* time, flip_type type);
+    void signalNewMeasurementWindow(uint8_t* window, double* avgWindow, double* time, flip_type type);
 
 private:
     bool findMeasurementWindow(screenFlip sf);

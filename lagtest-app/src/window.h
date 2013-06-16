@@ -92,8 +92,8 @@ public:
 	explicit Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips);
 
 signals:
-    void startMeassurement();
-    void stopMeassurement();
+    void startMeasurement();
+    void stopMeasurement();
     void doReset();
     void flashAdruino();
     void generateReport();
@@ -105,7 +105,7 @@ public slots:
     void receiveStableLatency();
     void receiveInvalidLatency();
     void receiveLatencyUpdate(LatencyModel *lm);
-    void receiveNewMeassurementWindow(uint8_t* window, double* avgWindow, double* time, flip_type type);
+    void receiveNewMeasurementWindow(uint8_t* window, double* avgWindow, double* time, flip_type type);
     void rcvTogglePlot();
     void quit();    
     void recvOpenHelpPage();

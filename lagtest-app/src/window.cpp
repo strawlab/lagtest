@@ -84,8 +84,8 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
 
     flipWindow = new flashingBGQPaint(500, tm, screenFlips);
 
-    connect( this, SIGNAL(startMeassurement()), flipWindow, SLOT(receiveStart()) );
-    connect( this, SIGNAL(stopMeassurement()), flipWindow, SLOT(receiveStop()) );
+    connect( this, SIGNAL(startMeasurement()), flipWindow, SLOT(receiveStart()) );
+    connect( this, SIGNAL(stopMeasurement()), flipWindow, SLOT(receiveStop()) );
 
     flipWindow->resize(150, 140);
     flipWindow->show();
@@ -250,7 +250,7 @@ void Window::keyReleaseEvent(QKeyEvent *event)
                 break;
 
             this->msg->setText( "Remain still. Calculating Latency ..." );
-            emit startMeassurement();
+            emit startMeasurement();
             emit doReset();
             break;
         }
@@ -312,7 +312,7 @@ void Window::receiveStableLatency()
     this->msg->setText( "Found a Latency of" );    
 }
 
-void Window::receiveNewMeassurementWindow(uint8_t* window, double *avgWindow, double *time, flip_type type)
+void Window::receiveNewMeasurementWindow(uint8_t* window, double *avgWindow, double *time, flip_type type)
 {    
     //qDebug("Updateing curve %d",updateCurveIdx[type]);
     for(int j=0; j < LatencyModel::measurementWindowSize; j++)
