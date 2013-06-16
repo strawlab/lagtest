@@ -196,7 +196,7 @@ void loop() {
 
             static timed_sample_t version_request;
 
-            version_request.value = 2;
+            version_request.value = 3;
 
             uint8_t SaveSREG_ = SREG;   // save interrupt flag
             cli(); // disable interrupts
