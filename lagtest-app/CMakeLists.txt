@@ -76,8 +76,8 @@ set( CMAKE_FIND_LIBRARY_SUFFIXES ".lib" )
 
 # ============ Main Source files ============== #
 
-set (RRJ_SOURCES    "src/timemodel.cpp"                                        		    
-                    "src/rs232.cpp"                    
+set (RRJ_SOURCES    "src/timemodel.cpp"
+                    "src/rs232.cpp"
                     "src/serialporthandler.cpp"
                     "src/latencymodel.cpp"
                     "src/window.cpp"
@@ -95,15 +95,3 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include_directories(${PRJ_INCLUDE} ${OPENGL_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${QWT_INC_PATH} )
 
 target_link_libraries(lagtest ${OPENGL_LIBRARIES} ${QWT_LIBRARY} ${QT_LIBRARIES} )
-
-# ============ Test files ============== #
-
-#rosbuild_add_executable(IPPImage_Test src/IMPFramework/Test/IPPImage_Test.cpp src/IMPFramework/IPPImage.cpp )
-#target_link_libraries(IPPImage_Test ${Boost_LIBRARIES} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${IPP_LIBRARIES} )
-#set_target_properties( IPPImage_Test PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${EXECUTABLE_OUTPUT_PATH}/Test )
-#add_test(IPPImage bin/Test/IPPImage_Test)
-#message("Run test with \n    ctest . --output-on-failure")
-
-
-
-
