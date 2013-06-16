@@ -15,7 +15,7 @@ class Window;
 class QPlainTextEdit;
 
 class LagTest : public QObject
-{    
+{
     Q_OBJECT
 public:
     explicit LagTest() { }; //Only here to make Flasher easier

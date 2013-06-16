@@ -107,11 +107,11 @@ public slots:
     void receiveLatencyUpdate(LatencyModel *lm);
     void receiveNewMeasurementWindow(uint8_t* window, double* avgWindow, double* time, flip_type type);
     void rcvTogglePlot();
-    void quit();    
+    void quit();
     void recvOpenHelpPage();
     void rcvShowAbout();
 
-protected:   
+protected:
     virtual void keyPressEvent(QKeyEvent *event);
     virtual void keyReleaseEvent(QKeyEvent *event);
     QLabel* msg;
@@ -134,7 +134,7 @@ protected:
     void createPlots();
 
 
-private:    
+private:
 };
 
 // Simple QWidget extention that fowards all keyboard events to its parent

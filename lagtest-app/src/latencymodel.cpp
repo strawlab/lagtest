@@ -10,7 +10,7 @@ LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFl
     qDebug("Creating LatencyModel ...");
     // Setup period update of the model
 	this->timer = new QTimer();
-    connect( timer, SIGNAL(timeout()), this, SLOT( update() ));    
+    connect( timer, SIGNAL(timeout()), this, SLOT( update() ));
     this->timer->setInterval(ms_updateRate);
     this->resetHistory();
 }
@@ -58,7 +58,7 @@ void LatencyModel::resetHistory()
         }
         emit signalNewMeasurementWindow( this->adcData[WHITE_TO_BLACK][i], this->avgAdcWindow[WHITE_TO_BLACK], this->sampleTimes, WHITE_TO_BLACK );
         emit signalNewMeasurementWindow( this->adcData[BLACK_TO_WHITE][i], this->avgAdcWindow[BLACK_TO_WHITE], this->sampleTimes, BLACK_TO_WHITE );
-    } 
+    }
     emit signalUpdate(this);
 
     this->measurementCnter[BLACK_TO_WHITE] = -1;
@@ -111,10 +111,10 @@ void LatencyModel::update()
             this->screenFlips->unget();
             break;
         }
-    }      
+    }
 
     if( latency != -1.0 )
-    {        
+    {
         if( this->isStable( this->latencyStableSize ) ){
             emit signalStableLatency();
         } else {
@@ -212,7 +212,7 @@ void LatencyModel::createAvgWindow()
         for( j=0; j < measurementWindowSize; j++ )
         {
             if(n[WHITE_TO_BLACK] > i) {
-                avgAdcWindow[WHITE_TO_BLACK][j] += this->adcData[WHITE_TO_BLACK][i][j];                    
+                avgAdcWindow[WHITE_TO_BLACK][j] += this->adcData[WHITE_TO_BLACK][i][j];
             }
 
             if(n[BLACK_TO_WHITE] > i) {
@@ -289,7 +289,7 @@ bool LatencyModel::detectdisplacedSensor()
 }
 
 bool LatencyModel::findMeasurementWindow(screenFlip sf )
-{   
+{
     bool found = false;
     adcMeasurement s;
 

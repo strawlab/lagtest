@@ -33,7 +33,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod)
 
     this->doNewVersionCheck();
 
-    TimeModel* tm = new TimeModel();    
+    TimeModel* tm = new TimeModel();
     //tm.testModelGenerator();
 
     RingBuffer<screenFlip>* screenFlips = new RingBuffer<screenFlip>(20);
@@ -90,7 +90,7 @@ void myMessageOutput(QtMsgType type, const QString &msg)
 #else
 void myMessageOutput(QtMsgType type, const char *msg)
 #endif
-{    
+{
     if( logWindow !=  NULL) {
         logWindow->appendPlainText( msg );
     } else {
@@ -220,7 +220,7 @@ void LagTest::recvSelectPort()
 }
 
 void LagTest::doNewVersionCheck()
-{    
+{
     QNetworkAccessManager *manager = new QNetworkAccessManager(this);
     connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(recvVersionCheckFinished(QNetworkReply*)));
     manager->get(QNetworkRequest(QUrl("http://version.lagtest.org/latest")));
@@ -287,7 +287,7 @@ void LagTest::receiveFlashAdruino()
 }
 
 QString LagTest::makeUserSelectPort()
-{    
+{
     //Create a simple QWidget that contains a dropdown list of all serial ports
     QWidget mainWindow;
     QComboBox combo;
@@ -329,7 +329,7 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
     QString param(QString::fromLocal8Bit(buffer));
     qDebug("Calling %s with %s" , avrDudePath.toStdString().c_str(), param.toStdString().c_str() );
 
-    QProcess process;    
+    QProcess process;
     process.execute (avrDudePath, param.split(" "));
 
     if( process.exitCode() == 0){

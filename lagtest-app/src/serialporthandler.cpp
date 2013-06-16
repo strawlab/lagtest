@@ -103,7 +103,7 @@ LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeMode
     clock_storage(clock_storage),
     adc_storage(adc_storage),
     sendRequest(false),
-    baudRate(baudRate),    
+    baudRate(baudRate),
     tR(0)
 {
     this->portN = this->getPortIdx(port);
@@ -119,7 +119,7 @@ LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeMode
 
 int LagTestSerialPortComm::getPortIdx(QString portName)
 {
-    int idx = -1;  
+    int idx = -1;
 
     if( portName.length() >= 4)
     {
@@ -129,7 +129,7 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
         } else if( portName.contains("USB", Qt::CaseInsensitive) ){
             //qDebug("Detect USBXX");
             idx = portName.right(portName.length()-3).toInt() + 16; //From USB0 , extract 0, convert it to int, rs232 starts counting from 16.
-        } else {            
+        } else {
             //qWarning("Invalid port name!");
             fprintf(stderr, "Invalid port name!");
         }
@@ -138,14 +138,14 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
 }
 
 void LagTestSerialPortComm::initSerialPort()
-{    
+{
     QString s;
     this->sendDebugMsg(s.sprintf("Opening Com port %d ... ", portN+1));
     if(RS232_OpenComport(portN, this->baudRate))
-    {        
+    {
         this->sendErrorMsg("Can not open Serial port.");
         throw std::exception();
-    }    
+    }
 }
 
 int LagTestSerialPortComm::write(unsigned char* data, int size){
@@ -182,7 +182,7 @@ void LagTestSerialPortComm::startCommunication()
 
     try{
         this->initSerialPort();
-    } catch( ... ) {        
+    } catch( ... ) {
         this->sendErrorMsg("Opening Serial Port failed!");
         emit finished();
     }
@@ -191,7 +191,7 @@ void LagTestSerialPortComm::startCommunication()
     //qDebug("Adruino Frame length = %lld bytes", frameLength );
 
     while(1)
-    {        
+    {
         QCoreApplication::processEvents();  //If this is not called, no signals can be received by this thread
 
         //If ordered, send an request to the adruino to return its current clock value
@@ -206,14 +206,14 @@ void LagTestSerialPortComm::startCommunication()
             this->timeRequests[tR] = this->tm->getCurrentTime();
             tR = (tR+1)%this->ntimeRequests;
 
-            this->sendRequest = false;                       
+            this->sendRequest = false;
         }
 
         nEmptyReads = 0;
         //Read from the serial port at least one complete message
         while( nBuffer < frameLength )
-        {            
-            nBytes = this->read(&(buffer[nBuffer]), (bufferSize-nBuffer) );            
+        {
+            nBytes = this->read(&(buffer[nBuffer]), (bufferSize-nBuffer) );
             nBuffer += nBytes;
             if(nBytes == 0){
                 nEmptyReads ++;

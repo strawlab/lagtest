@@ -63,7 +63,7 @@
 //Window::Window(enum drawingType drawing, TimeModel *tm, RingBuffer<screenFlip> *screenFlips)
 Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     showPlot(false)
-{    
+{
     qDebug("Creating main window ...");
     QWidget* flipWindow;
 	enum drawingType drawing = Window::QPAINT;
@@ -96,7 +96,7 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
 
     this->setLayout(layout);
 
-    qDebug("Main Window done!");    
+    qDebug("Main Window done!");
 }
 
 
@@ -157,7 +157,7 @@ void Window::createPlots()
     //cPlots[BLACK_TO_WHITE]->setFooter( "Latency [ms]" );
     cPlots[BLACK_TO_WHITE]->setAxisTitle( QwtPlot::xBottom, "Latency [ms]" );
     cPlots[WHITE_TO_BLACK]->setAxisTitle( QwtPlot::xBottom, "Latency [ms]" );
-    //cPlots[WHITE_TO_BLACK]->setFooter( "Latency [ms]" );    
+    //cPlots[WHITE_TO_BLACK]->setFooter( "Latency [ms]" );
 
     //QwtLegend* l = new QwtLegend();
     //QwtLegend* l2 = new QwtLegend();
@@ -261,7 +261,7 @@ void Window::keyPressEvent(QKeyEvent *event)
 {
     //qDebug("Pressed key %c", event->key() );
 
-    switch (event->key()) {       
+    switch (event->key()) {
     case Qt::Key_D:{
             this->rcvTogglePlot();
             break;
@@ -269,7 +269,7 @@ void Window::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Q:{
             this->quit();
         }
-    }        
+    }
 }
 
 void Window::rcvShowAbout()
@@ -308,12 +308,12 @@ void Window::receiveUnstableLatency()
 }
 
 void Window::receiveStableLatency()
-{    
-    this->msg->setText( "Found a Latency of" );    
+{
+    this->msg->setText( "Found a Latency of" );
 }
 
 void Window::receiveNewMeasurementWindow(uint8_t* window, double *avgWindow, double *time, flip_type type)
-{    
+{
     //qDebug("Updateing curve %d",updateCurveIdx[type]);
     for(int j=0; j < LatencyModel::measurementWindowSize; j++)
     {
@@ -380,7 +380,7 @@ flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel* clock, RingBuffer<sc
 
 
 void flashingBGQPaint::flipColor()
-{    
+{
     emit update(); //Will produce a paint event, and make the screen update
     this->drawWhiteBG = !this->drawWhiteBG;
 }

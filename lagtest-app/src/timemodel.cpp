@@ -32,12 +32,12 @@ double TimeModel::toLocalTime( adcMeasurement adc)
 }
 
 void TimeModel::update(clockPair cp)
-{    
+{
     double adruinoClock = cp.adruino_epoch*(1<<16) + cp.adruino_ticks;
 
     cpCnt = (cpCnt + 1) % this->clockHistory ;
     this->A(this->cpCnt, 0) = adruinoClock;
-    this->b(this->cpCnt) = cp.local;  
+    this->b(this->cpCnt) = cp.local;
 
     this->x = A.jacobiSvd(ComputeThinU | ComputeThinV).solve(b);
 

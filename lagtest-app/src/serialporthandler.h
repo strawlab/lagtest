@@ -12,7 +12,7 @@ class SerialPortHandler : public QObject
 {
     Q_OBJECT
 public:
-    explicit SerialPortHandler(QString port, int requestPeriod, TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);    
+    explicit SerialPortHandler(QString port, int requestPeriod, TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);
 
 signals:
     void sendDebugMsg(QString msg);
