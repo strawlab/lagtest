@@ -17,6 +17,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     set( QT5_STATIC_INST "C:/Users/pasieka/Projects/qt5/qtbase" )
     set( QT5_INST ${QT5_DYNAMIC_INST} )
     set( QT5_LIBS Qt5::WinMain )
+    set( QT_LIBRARIES QT5_LIBS )
 
     # WINDOWS: set path to cmake find modules
     set(CMAKE_PREFIX_PATH ${QT5_INST} )
@@ -31,17 +32,24 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
     find_library( QWT_LIBRARY NAMES qwt PATHS "C:/Projects/qwt/lib" )
     #add_definitions( -DWINVER=0x0501 )
 
+    # Find the QtWidgets library
+    find_package(Qt5Widgets REQUIRED)
+    find_package(Qt5OpenGL REQUIRED)
+    find_package(OpenGL REQUIRED)
+    find_package(Qt5Network REQUIRED)
+
+    qt5_use_modules(lagtest Widgets OpenGL Network)
+
+    # Needed define by Qwt
+    add_definitions(-DQWT_DLL)
+
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     message( "=== Detected Linux build ===")
 
-    # Define QT5 installation
-    set( QT5_INST "/opt/Qt5.0.2/5.0.2/gcc_64" )
-
-    #set path to cmake find modules
-    set(CMAKE_PREFIX_PATH ${QT5_INST} )
-    set(CMAKE_MODULE_PATH "${QT5_INST}/cmake;${CMAKE_MODULE_PATH}" )
+    find_package(Qt4 4.7 REQUIRED QtCore QtGui QtXml QtNetwork)
+    include(${QT_USE_FILE})
 
     set(EIGEN3_INCLUDE_DIR "/usr/include/eigen3") # ubuntu: libeigen3-dev
     set(QWT_INC_PATH "/usr/include/qwt") # ubuntu: libqwt-dev
@@ -56,16 +64,6 @@ message( "\nCMAKE_PREFIX_PATH = " ${CMAKE_PREFIX_PATH} )
 # Instruct CMake to run moc automatically when needed.
 set( CMAKE_AUTOMOC ON ) # http://blogs.kde.org/2011/11/01/cool-new-stuff-cmake-286-automoc
 #set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-static ")
-
-# Find the QtWidgets library
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5OpenGL REQUIRED)
-find_package(OpenGL REQUIRED)
-find_package(Qt5Network REQUIRED)
-
-
-# Needed define by Qwt
-add_definitions(-DQWT_DLL)
 
 set( CMAKE_VERBOSE_MAKEFILE on )
 
@@ -88,11 +86,15 @@ set (RRJ_SOURCES    "src/timemodel.cpp"
                                         )
 set (PRJ_INCLUDE "src" )
 
-add_executable( lagtest WIN32 ${RRJ_SOURCES} )
+IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  add_executable( lagtest WIN32 ${RRJ_SOURCES} )
+ELSE(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+  add_executable( lagtest ${RRJ_SOURCES} )
+ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+
 include_directories(${PRJ_INCLUDE} ${OPENGL_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR} ${QWT_INC_PATH} )
 
-target_link_libraries(lagtest ${OPENGL_LIBRARIES} ${QWT_LIBRARY} ${QT5_LIBS} )
-qt5_use_modules(lagtest Widgets OpenGL Network)
+target_link_libraries(lagtest ${OPENGL_LIBRARIES} ${QWT_LIBRARY} ${QT_LIBRARIES} )
 
 # ============ Test files ============== #
 
