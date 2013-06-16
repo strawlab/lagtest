@@ -1,7 +1,7 @@
 #!/bin/bash -x
 set -e
 
-sudo apt-get install -y cmake libeigen3-dev libqt5opengl5-dev libqwt-dev
+sudo apt-get install -y cmake libeigen3-dev libqt5opengl5-dev libqwt-dev build-essential
 
 THISDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
