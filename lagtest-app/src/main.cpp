@@ -38,7 +38,12 @@
 **
 ****************************************************************************/
 
+#if QT_VERSION >= 0x050000
 #include <QtGui/QGuiApplication>
+#else
+#include <QtGui/QApplication>
+#endif
+
 #include <QApplication>
 #include <QtGui/QScreen>
 #include <QtCore/qmath.h>

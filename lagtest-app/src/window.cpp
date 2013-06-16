@@ -54,6 +54,7 @@
 #include <QCoreApplication>
 #include "latencymodel.h"
 
+#include <QUrl>
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QPainter>

@@ -88,12 +88,20 @@ QPlainTextEdit* logWindow = NULL;
 
 
 
-void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+#if QT_VERSION >= 0x050000
+void myMessageOutput(QtMsgType type, const QString &msg)
+#else
+void myMessageOutput(QtMsgType type, const char *msg)
+#endif
 {    
     if( logWindow !=  NULL) {
         logWindow->appendPlainText( msg );
     } else {
+#if QT_VERSION >= 0x050000
         fprintf(stderr, "%s" , msg.toStdString().c_str() );
+#else
+        fprintf(stderr, "%s", msg );
+#endif
     }
 }
 
@@ -105,7 +113,11 @@ void LagTest::setupLogWindow()
     logWindow->setReadOnly(true);
     logWindow->resize( 700 , 500 );
     logWindow->hide();
+#if QT_VERSION >= 0x050000
     qInstallMessageHandler( myMessageOutput );
+#else
+    qInstallMsgHandler( myMessageOutput );
+#endif
 }
 
 void LagTest::recvShowLogWindow(){
@@ -117,7 +129,7 @@ void LagTest::recvSerialMsg(QString msg)
     QString s;
     s = "SerialPort: ";
     s += msg;
-    qDebug( s.toStdString().c_str() );
+    qDebug( "%s", s.toStdString().c_str() );
 }
 
 void LagTest::recvSerialError(QString msg)
@@ -125,7 +137,7 @@ void LagTest::recvSerialError(QString msg)
     QString s;
     s = "Error SerialPort: ";
     s += msg;
-    qDebug( s.toStdString().c_str() );
+    qDebug( "%s", s.toStdString().c_str() );
 }
 
 void LagTest::generateReport()

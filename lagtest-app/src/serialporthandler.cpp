@@ -3,6 +3,28 @@
 #include <QThread>
 #include <QCoreApplication>
 
+
+
+#ifdef LINUX
+#include <unistd.h>
+#endif
+#ifdef WINDOWS
+#inlcude <windows.h>
+#endif
+
+void mySleep(int sleepMs)
+{
+  // From http://stackoverflow.com/questions/10918206/cross-platform-sleep-function-for-c
+#ifdef LINUX
+  usleep(sleepMs * 1000);   // usleep takes sleep time in us
+#endif
+#ifdef WINDOWS
+  Sleep(sleepMs);
+#endif
+}
+
+
+
 SerialPortHandler::SerialPortHandler(QString port, int requestPeriod, TimeModel *tm, RingBuffer<clockPair> *clock_storage, RingBuffer<adcMeasurement> *adc_storage) :
     QObject(0),
     thread(NULL),
@@ -195,7 +217,7 @@ void LagTestSerialPortComm::startCommunication()
             nBuffer += nBytes;
             if(nBytes == 0){
                 nEmptyReads ++;
-                QThread::msleep ( 10 ) ;                
+                mySleep( 10 ) ;
             }
 
             if(nEmptyReads > 100){
