@@ -8,9 +8,13 @@ using namespace Eigen;
 #include <QElapsedTimer>
 
 TimeModel::TimeModel()
-    : cpCnt(0), gain(0), offset(0)
+    : cpCnt(0), gain(0), offset(0) , timer(0)
 {
-    // Start QElapsedTimer, this will provide a high accuracy timer
+    init();
+}
+
+void TimeModel::init()
+{
     this->timer = new QElapsedTimer();
     timer->start();
 
@@ -18,6 +22,12 @@ TimeModel::TimeModel()
     this->b = VectorXd::Ones( TimeModel::clockHistory );
 }
 
+void TimeModel::start()
+{
+    if(timer) delete timer;
+
+    this->init();
+}
 
 //Return time [ns] since program start
 double TimeModel::getCurrentTime()

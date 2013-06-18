@@ -62,11 +62,13 @@
 #include "lagtest.h"
 
 #include <QDialog>
+#include <QApplication>
+#include <QDesktopWidget>
 
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    QCoreApplication::setApplicationVersion( "0.8.0" );
+    QCoreApplication::setApplicationVersion( "0.8.0" );    
     app.setStyle( QStyleFactory::create("windowsxp") ); //Do this to prevent bug: https://bugreports.qt-project.org/browse/QTBUG-29720
 
 //#define FLASH
@@ -79,6 +81,7 @@ int main(int argc, char **argv)
 //    d.setWindowTitle("Dialog one");
 //    d.show();
     LagTest lagtest( 300, 1000, 500 );
+    lagtest.setProperty("ArudinoFirmwareVersion", 3);
 
 #endif
     return app.exec();

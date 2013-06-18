@@ -2,7 +2,7 @@
 
 #include <QThread>
 #include <QCoreApplication>
-
+#include <QVariant>
 
 
 #ifdef LINUX
@@ -46,7 +46,7 @@ void SerialPortHandler::createSerialPortCommunicator()
         // Setup period query for arduino clock
         this->timer = new QTimer(this);
         connect(timer, SIGNAL(timeout()), serial, SLOT(sendClockRequest()));
-        timer->start(requestPeriod);
+        timer->setInterval(requestPeriod);
 
         this->thread = new QThread();
         serial->moveToThread(thread);
@@ -54,8 +54,12 @@ void SerialPortHandler::createSerialPortCommunicator()
         connect(serial, SIGNAL(finished()), this, SLOT(onThreadQuit()));
         connect(serial, SIGNAL(finished()), serial, SLOT(deleteLater()));
 
+        //Forward signals
         connect(serial, SIGNAL(sendDebugMsg(QString)), this, SIGNAL(sendDebugMsg(QString)) );
         connect(serial, SIGNAL(sendErrorMsg(QString)), this, SIGNAL(sendErrorMsg(QString)) );
+        connect(serial, SIGNAL(sendFirmwareVersion(int)), this, SIGNAL(sendFirmwareVersion(int)) );
+        connect(serial, SIGNAL(sendArduinoTimeout()), this, SIGNAL(sendArduinoTimeout()) );
+
 
 
     } catch (exception &e){
@@ -87,11 +91,17 @@ void SerialPortHandler::onThreadQuit()
 
 void SerialPortHandler::start()
 {
-    //qDebug("Starting serial port reader thread ...");
-    this->sendDebugMsg("Will start serial port Communicator!");
-
-    if(this->thread)
+    if(this->thread){
+        this->sendDebugMsg("Will start serial port Communicator!");
         this->thread->start();
+        this->timer->start();
+    }
+}
+
+void SerialPortHandler::stop(){
+    this->serial->recvStop();
+    this->timer->stop();
+    this->thread->terminate();
 }
 
 #define _CRT_SECURE_NO_WARNINGS
@@ -103,8 +113,7 @@ LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeMode
     clock_storage(clock_storage),
     adc_storage(adc_storage),
     sendRequest(false),
-    baudRate(baudRate),
-    tR(0)
+    baudRate(baudRate)
 {
     this->portN = this->getPortIdx(port);
     if( portN < 0)
@@ -113,8 +122,14 @@ LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeMode
         QString s;
         this->sendErrorMsg( s.sprintf("Invalid Com port [%s]!", port.toStdString().c_str()));
         throw std::exception();
-    }
+    }   
+}
 
+void LagTestSerialPortComm::init()
+{
+    this->tR = 0;
+    this->clock_storage->reset();
+    this->adc_storage->reset();
 }
 
 int LagTestSerialPortComm::getPortIdx(QString portName)
@@ -133,6 +148,11 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
         }
     }
     return idx;
+}
+
+void LagTestSerialPortComm::closeSerialPort()
+{
+    RS232_CloseComport( portN );
 }
 
 void LagTestSerialPortComm::initSerialPort()
@@ -154,6 +174,11 @@ int  LagTestSerialPortComm::read(unsigned char* buffer, int max_size){
     return RS232_PollComport(this->portN, buffer, max_size);
 }
 
+void LagTestSerialPortComm::recvStop()
+{
+    this->stopThread = true;
+}
+
 void LagTestSerialPortComm::sendClockRequest()
 {
     //sendDebugMsg("Received signal to send Time Request ...");
@@ -161,153 +186,196 @@ void LagTestSerialPortComm::sendClockRequest()
 }
 
 void LagTestSerialPortComm::startCommunication()
-{
-    qint64 frameLength = 9;
-    const static int bufferSize = 100;
-
+{   
     clockPair cp;
-    adcMeasurement adcM;
-
-    uint8_t buffer[ bufferSize ];
-    timed_sample_t frame;
-    int i;
-    int nBuffer;
-    bool validFrame = false;
-    int nBytes;
+    adcMeasurement adcM; 
+    timed_sample_t frame;    
+    bool validFrame = false;    
     double sendTime, now, d1;
-    unsigned char b[2];
-    int nEmptyReads;
+    int frameCnter = 0;
+
+    this->stopThread = false;
+
+    sendDebugMsg("Starting Arduino Serial communication ...");
+
+    this->init();
 
     try{
         this->initSerialPort();
+        mySleep( 10 ) ;
     } catch( ... ) {
         this->sendErrorMsg("Opening Serial Port failed!");
         emit finished();
     }
 
-    nBuffer = 0;  //Number of unread bytes in the buffer
-    //qDebug("Arduino Frame length = %lld bytes", frameLength );
-
-    while(1)
+    while(!this->stopThread)
     {
         QCoreApplication::processEvents();  //If this is not called, no signals can be received by this thread
 
         //If ordered, send an request to the arduino to return its current clock value
         if( this->sendRequest )
         {
-            b[0] = 'P';
-            b[1] = this->tR;
-
-            //sendDebugMsg("Sending request for Arduino Clock time ...");
-            this->write(b, 2);
-
-            this->timeRequests[tR] = this->tm->getCurrentTime();
-            tR = (tR+1)%this->ntimeRequests;
-
+            this->sendArduinoTimeRequest();
             this->sendRequest = false;
         }
 
-        nEmptyReads = 0;
-        //Read from the serial port at least one complete message
-        while( (nBuffer < frameLength) && (nEmptyReads < 100) )
-        {
-            nBytes = this->read(&(buffer[nBuffer]), (bufferSize-nBuffer) );
-            nBuffer += nBytes;
-            if(nBytes == 0){
-                nEmptyReads ++;
-                mySleep( 1 ) ;
-            } else {
-                nEmptyReads = 0;
-            }
+        if( frameCnter == 10 ){
+            this->sendArduinoVersionRequest();
         }
-        //qDebug("Buffer at %d", nBuffer);
-        assert ( nBuffer <= bufferSize );
 
-        if( nBuffer < frameLength )
+        validFrame = this->getNextFrame( frame, now );
+        frameCnter++;
+
+        if( validFrame )
         {
-            this->sendErrorMsg("Not getting any data from the arduino!");
-        }
-        else
-        {
-            //Try to read a new frame from the beginning of the buffer
-            //If the frame checksum fails, do a frame shift and try again
-            validFrame = false;
-            i = 0;
-            //do frame shifts untill there cannot be a full frame in the buffer
-            while( !validFrame && (i+frameLength) <= nBuffer )
+            //qDebug( " Frame: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+
+            switch(frame.cmd)
             {
-                validFrame = readFrame(&buffer[i], &frame);
-
-                if( validFrame ) {
-                   now = this->tm->getCurrentTime();
-                   i += frameLength;
-                } else {
-                    i++; //Shift the frame by one
-                }
-            }
-            // i ... number of bytes read/garbage in buffer
-
-            //Move read/garbage data to the beginning of the buffer
-            assert ( i <= nBuffer );
-            for(int j = 0; j < (nBuffer-i) ; j++){
-                buffer[j] = buffer[j+i];
-            }
-            nBuffer -= i;
-            assert( nBuffer >= 0 );
-
-            if( validFrame )
-            {
-                //qDebug( " Frame: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
-
-                switch(frame.cmd)
+                case 'H'://ADC measurement
                 {
-                    case 'H'://ADC measurement
-                    {
-                        adcM.adc = frame.value;
-                        adcM.arduino_epoch = frame.epoch;
-                        adcM.arduino_ticks = frame.ticks;
-                        this->adc_storage->put( &adcM );
-                        //qDebug("Received a adc measurement");
-                        break;
-                    }
-                    case 'P': //Clock response
-                    {
-                    //Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
-                        if( frame.value > this->ntimeRequests ){
-                            //qCritical("Arduino returns invalid reference id!");
-                            this->sendErrorMsg("Arduino returns invalid reference id!");
-                        } else {
-                            sendTime = this->timeRequests[ frame.value ];
-                            d1 = (now - sendTime)/2.0;
-                            if( d1 <= 0){
-                                //qCritical("somethign strange happens here ... %g", d1 );
-                                QString s;
-                                this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
-                                d1 = 0;
-                            }
-                            cp.local = sendTime + d1;
-                            cp.arduino_epoch = frame.epoch;
-                            cp.arduino_ticks = frame.ticks;
-                            this->clock_storage->put( &cp );
-                            //qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
-                            break;
-                        }
-                    }
-                    default:{
-                        //qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
-                    }
+                    adcM.adc = frame.value;
+                    adcM.arduino_epoch = frame.epoch;
+                    adcM.arduino_ticks = frame.ticks;
+                    this->adc_storage->put( &adcM );
+                    //qDebug("Received a adc measurement");
+                    break;
                 }
-            } else {
-                //qDebug( " Invalid Frame ... ");
-                this->sendErrorMsg("Invalid Frame ... ");
+                case 'P': //Clock response
+                {
+                //Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
+                    if( frame.value > this->ntimeRequests ){
+                        //qCritical("Arduino returns invalid reference id!");
+                        this->sendErrorMsg("Arduino returns invalid reference id!");
+                    } else {
+                        sendTime = this->timeRequests[ frame.value ];
+                        d1 = (now - sendTime)/2.0;
+                        if( d1 <= 0){
+                            //qCritical("somethign strange happens here ... %g", d1 );
+                            QString s;
+                            this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
+                            d1 = 0;
+                        }
+                        cp.local = sendTime + d1;
+                        cp.arduino_epoch = frame.epoch;
+                        cp.arduino_ticks = frame.ticks;
+                        this->clock_storage->put( &cp );
+                        //qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
+                    }
+                    break;
+                }
+
+                case 'V':   //Version Response
+                {
+                    emit sendFirmwareVersion( frame.value );
+                    break;
+                }
+
+                default:{
+                    //qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+                }
             }
+        } else {
+            //qDebug( " Invalid Frame ... ");
+            emit sendErrorMsg("Invalid Frame ... ");
         }
     }
 
+    sendDebugMsg("Stoping Arduino Serial communication ...");
+    this->closeSerialPort();
+}
+
+void LagTestSerialPortComm::sendArduinoVersionRequest()
+{
+    unsigned char b[2];
+    b[0] = 'V';
+    b[1] = 0;
+
+    this->write(b, 2);
+}
+
+void LagTestSerialPortComm::sendArduinoTimeRequest()
+{
+    unsigned char b[2];
+
+    tR = (tR+1)%this->ntimeRequests;
+
+    b[0] = 'P';
+    b[1] = this->tR;
+
+    this->write(b, 2);
+    this->timeRequests[tR] = this->tm->getCurrentTime();
+}
+
+int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize)
+{
+    int nEmptyReads = 0;
+    int nReadBytes = 0;
+    int t;
+    //Read from the serial port at least one complete message
+    while( (nReadBytes < frameLength) && (nEmptyReads < 1000) )
+    {
+        t = this->read(&(buffer[nReadBytes]), (bufferSize-nReadBytes) );
+        nReadBytes += t;
+        if(t == 0){
+            nEmptyReads ++;
+            mySleep( 1 ) ;
+        } else {
+            nEmptyReads = 0;
+        }
+    }
+
+    if( nEmptyReads >= 1000 ){
+        emit sendArduinoTimeout();
+        return 0;
+    }
+
+    return nReadBytes;
 }
 
 
-bool LagTestSerialPortComm::readFrame(uint8_t* buffer, timed_sample_t* frame)
+bool LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRead )
+{
+    const int frameLength = 9;
+    const int bufferSize = 100;
+    static uint8_t buffer[bufferSize];
+    static int nBuffer = 0;
+    int i;
+    bool validFrame;
+
+    nBuffer += this->readFrameFromSerial( &(buffer[nBuffer]), frameLength, bufferSize-nBuffer) ;
+
+    //Try to read a new frame from the beginning of the buffer
+    //If the frame checksum fails, do a frame shift and try again
+    validFrame = false;
+    i = 0;
+    //do frame shifts untill there cannot be a full frame in the buffer
+    while( !validFrame && (i+frameLength) <= nBuffer )
+    {
+        validFrame = decode2Frame(&buffer[i], &frame);
+
+        if( validFrame ) {
+           timeRead = this->tm->getCurrentTime();
+           i += frameLength;
+        } else {
+            i++; //Shift the frame by one
+        }
+    }
+    // i ... number of bytes read/garbage in buffer
+
+    //Move read/garbage data to the beginning of the buffer
+    assert ( i <= nBuffer );
+    for(int j = 0; j < (nBuffer-i) ; j++){
+        buffer[j] = buffer[j+i];
+    }
+    nBuffer -= i;
+    assert( nBuffer >= 0 );
+
+    return validFrame;
+}
+
+
+bool LagTestSerialPortComm::decode2Frame(uint8_t* buffer, timed_sample_t* frame)
 {
     //Check if the checksum is valid and if so, fill the data structure
     uint8_t cs;

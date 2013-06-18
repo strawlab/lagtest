@@ -20,6 +20,7 @@
 
 
 #include <QDesktopServices>
+#include <QDesktopWidget>
 #include <QVariantMap>
 #include <QAbstractButton>
 #include <QFile>
@@ -33,7 +34,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 
     this->doNewVersionCheck();
 
-    TimeModel* tm = new TimeModel();
+    this->tm = new TimeModel();
     //tm.testModelGenerator();
 
     RingBuffer<screenFlip>* screenFlips = new RingBuffer<screenFlip>(20);
@@ -54,6 +55,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( w, SIGNAL(doReset()), lm, SLOT(reset()) );
     QObject::connect( w, SIGNAL(startMeasurement()), serial, SLOT(start()) );
     QObject::connect( w, SIGNAL(startMeasurement()), lm, SLOT(start()) );
+    QObject::connect( w, SIGNAL(startMeasurement()), tm, SLOT(start()) );
     QObject::connect( w, SIGNAL(generateReport()), this, SLOT( generateReport() ) );
     QObject::connect( w, SIGNAL(flashArduino()), this, SLOT( recvFlashArduino() ) );
     QObject::connect( w, SIGNAL(showLogWindow()), this, SLOT( recvShowLogWindow() ) );
@@ -71,6 +73,12 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 
     QObject::connect( serial, SIGNAL(sendDebugMsg(QString)),    this, SLOT(recvSerialMsg(QString)) );
     QObject::connect( serial, SIGNAL(sendErrorMsg(QString)),    this, SLOT(recvSerialError(QString)) );
+    QObject::connect( serial, SIGNAL(sendArduinoTimeout()),     this, SLOT(recvArduinoTimeout()) );
+    QObject::connect( serial, SIGNAL(sendFirmwareVersion(int)), this, SLOT(recvArduinoFirmwareVersion(int)) );
+
+    QObject::connect( this, SIGNAL(stopMeasurement()), serial, SLOT( stop()) );
+    QObject::connect( this, SIGNAL(stopMeasurement()), lm, SLOT( stop()) );
+    QObject::connect( this, SIGNAL(stopMeasurement()), w, SIGNAL( stop()) );
 
     w->show();
 }
@@ -78,7 +86,6 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 LagTest::~LagTest()
 {
 }
-
 
 
 QPlainTextEdit* logWindow = NULL;
@@ -137,6 +144,29 @@ void LagTest::recvSerialError(QString msg)
     qDebug( "%s", s.toStdString().c_str() );
 }
 
+void LagTest::recvArduinoTimeout()
+{
+    //emit stopMeasurement();
+    MessageBox(NULL, "Unable to reach arduino!", "Serial Timeout", MB_OK | MB_ICONHAND);
+}
+
+void LagTest::recvArduinoFirmwareVersion(int version)
+{
+    int fVersion = this->property("ArudinoFirmwareVersion").toInt();
+    if( version != fVersion )
+    {
+
+        QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Invalid Arduino Firmware",
+                     tr("Invalid Arduino Firmware\nExpected %1 , Instead of %2").arg(fVersion).arg(version),
+                     QMessageBox::Ignore | QMessageBox::Ok);
+        box->button(QMessageBox::Ok)->setText("Flash Arduino");
+        int buttonPressed = box->exec();
+        if( buttonPressed == QMessageBox::Ok ) {
+            this->recvFlashArduino();
+        }
+    }
+}
+
 void LagTest::generateReport()
 {
     QString text;
@@ -151,6 +181,8 @@ void LagTest::generateReport()
 
     text.append( "\n" );
     text.append( tr("Operating System:  %1 \n").arg(this->getOS()) );
+    text.append( tr("Desktop resolution:  %1x%2 \n").arg( (QApplication::desktop())->width() ).arg((QApplication::desktop())->height()) );
+    text.append( tr("Desktop Color Depth:  %1 Bit \n").arg( (QApplication::desktop())->depth() ) );
     text.append( "\n" );
     text.append( tr("Display Vendor: XXXXXXX \n") );
     text.append( tr("Display Model:  XXXXXXX \n") );
@@ -158,6 +190,8 @@ void LagTest::generateReport()
     text.append( "\n" );
     text.append( "Notes:\n" );
     text.append( "\n" );
+
+    qDebug( "Width %d", (QApplication::desktop())->colorCount() );
 
     text.append( "\n" );
     text.append( tr("Report generated with LagTest v%1 \n").arg( QCoreApplication::applicationVersion() ) );
@@ -171,7 +205,7 @@ void LagTest::generateReport()
     {
         f.write( text.toLocal8Bit() );
     } else {
-        QMessageBox::warning(0, tr("Write Error"), tr("Writing Protocol failed!") , QMessageBox::Ok, QMessageBox::NoButton);
+        QMessageBox::warning(0, tr("Write Error"), tr("Writing Protocol failed!") , QMessageBox::Ok, QMessageBox::NoButton);        
     }
     f.close();
 }
@@ -210,7 +244,13 @@ QString LagTest::getOS()
 void LagTest::recvFlashArduino()
 {
     //qDebug("Current path %s" , QCoreApplication::applicationDirPath().toStdString().c_str() );
-    programArduino( QCoreApplication::applicationDirPath().append("/tools/avrdude.exe"), QCoreApplication::applicationDirPath().append("/firmware.hex"), this->settings->value("Arduino/Port").toString());
+    //programArduino( QCoreApplication::applicationDirPath().append("/tools/avrdude.exe"), QCoreApplication::applicationDirPath().append("/firmware.hex"), this->settings->value("Arduino/Port").toString());
+
+    emit stopMeasurement();
+
+    programArduino( settings->value("Arduino/avrDudePath").toString() ,
+                    settings->value("Arduino/firmwarePath").toString() ,
+                    this->settings->value("Arduino/Port").toString());
 }
 
 void LagTest::recvSelectPort()
@@ -287,12 +327,6 @@ std::vector<QString> LagTest::discoverComPorts()
     #endif
 
     return portsNames;
-}
-
-void LagTest::receiveFlashArduino()
-{
-    this->settings->beginGroup("Arduino");
-    settings->value("port");
 }
 
 QString LagTest::makeUserSelectPort()

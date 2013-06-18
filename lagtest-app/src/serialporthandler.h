@@ -17,10 +17,13 @@ public:
 signals:
     void sendDebugMsg(QString msg);
     void sendErrorMsg(QString msg);
+    void sendArduinoTimeout();
+    void sendFirmwareVersion(int version);
 
 public slots:
     void onThreadQuit();
     void start();
+    void stop();
 
 
 private:
@@ -64,15 +67,26 @@ signals:
     void finished();
     void sendDebugMsg(QString msg);
     void sendErrorMsg(QString msg);
+    void sendArduinoTimeout();
+    void sendFirmwareVersion(int version);
 
 public slots:
     void startCommunication();
     void sendClockRequest();
-
+    void recvStop();
 
 private:
-    bool readFrame(uint8_t *buffer, timed_sample_t* frame);
+    void init();
+    bool decode2Frame(uint8_t *buffer, timed_sample_t* frame);
+    void closeSerialPort();
     void initSerialPort();
+    bool doVersionCheck();
+    void sendArduinoTimeRequest();
+    void sendArduinoVersionRequest();
+    int readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize);
+    bool getNextFrame(timed_sample_t& frame , double &timeRead);
+
+    bool stopThread;
 
     int write(unsigned char *data, int size);
     int read(unsigned char *buffer, int max_size);

@@ -99,6 +99,7 @@ signals:
     void generateReport();
     void showLogWindow();
     void selectPort();
+    void stop();
 
 public slots:
     void receiveUnstableLatency();
@@ -109,11 +110,11 @@ public slots:
     void rcvTogglePlot();
     void quit();
     void recvOpenHelpPage();
-    void rcvShowAbout();
+    void rcvShowAbout();    
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event);
-    virtual void keyReleaseEvent(QKeyEvent *event);
+    //virtual void keyReleaseEvent(QKeyEvent *event);
     QLabel* msg;
     QLabel* latency;
     //QwtPlot* plot[2];
@@ -133,7 +134,7 @@ protected:
     QMenuBar* createMenu();
     void createPlots();
 
-
+    bool isRunning;
 private:
 };
 

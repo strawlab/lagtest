@@ -1,6 +1,7 @@
 #ifndef TIMEMODEL_H
 #define TIMEMODEL_H
 
+#include <QObject>
 #include <QElapsedTimer>
 #include <stdint.h>
 
@@ -26,8 +27,9 @@ typedef struct{
     uint8_t adc;
 } adcMeasurement;
 
-class TimeModel
+class TimeModel : public QObject
 {
+    Q_OBJECT
 public:
     TimeModel();
 
@@ -37,6 +39,11 @@ public:
     double getCurrentTime();
     double toLocalTime( adcMeasurement adc);
     void update(clockPair cp);
+    void reset();
+    void init();
+
+public slots:
+    void start();
 
 private:
     QElapsedTimer*  timer;

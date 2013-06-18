@@ -13,6 +13,7 @@ class LatencyModel;
 class SerialPortHandler;
 class Window;
 class QPlainTextEdit;
+class TimeModel;
 
 class LagTest : public QObject
 {
@@ -22,8 +23,10 @@ public:
     explicit LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow = true);
     virtual ~LagTest();
 
-public slots:
-    void receiveFlashArduino();
+signals:
+    void stopMeasurement();
+
+public slots:    
     void recvVersionCheckFinished(QNetworkReply*reply);
     void generateReport();
     void recvFlashArduino();
@@ -32,6 +35,8 @@ public slots:
 
     void recvSerialMsg(QString msg);
     void recvSerialError(QString msg);
+    void recvArduinoTimeout();
+    void recvArduinoFirmwareVersion(int version);
 
 protected:
     QString getOS();
@@ -47,6 +52,7 @@ protected:
     QSettings* settings;
     LatencyModel* lm;
     SerialPortHandler* serial;
+    TimeModel* tm;
     Window* w;
 };
 

@@ -35,6 +35,7 @@ public slots:
     void update();
     void reset();
     void start();
+    void stop();
     void realStart();
 
 

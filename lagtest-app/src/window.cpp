@@ -1,43 +1,3 @@
-/****************************************************************************
-**
-** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
-** Contact: http://www.qt-project.org/legal
-**
-** This file is part of the examples of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:BSD$
-** You may use this file under the terms of the BSD license as follows:
-**
-** "Redistribution and use in source and binary forms, with or without
-** modification, are permitted provided that the following conditions are
-** met:
-**   * Redistributions of source code must retain the above copyright
-**     notice, this list of conditions and the following disclaimer.
-**   * Redistributions in binary form must reproduce the above copyright
-**     notice, this list of conditions and the following disclaimer in
-**     the documentation and/or other materials provided with the
-**     distribution.
-**   * Neither the name of Digia Plc and its Subsidiary(-ies) nor the names
-**     of its contributors may be used to endorse or promote products derived
-**     from this software without specific prior written permission.
-**
-**
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-** OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-** LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-** DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-** THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-** (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-** OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
-
 //#include "glwidget.h"
 #include <QWidget>
 #include "window.h"
@@ -62,7 +22,7 @@
 
 //Window::Window(enum drawingType drawing, TimeModel *tm, RingBuffer<screenFlip> *screenFlips)
 Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
-    showPlot(false)
+    showPlot(false) , isRunning(false)
 {
     qDebug("Creating main window ...");
     QWidget* flipWindow;
@@ -86,6 +46,7 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
 
     connect( this, SIGNAL(startMeasurement()), flipWindow, SLOT(receiveStart()) );
     connect( this, SIGNAL(stopMeasurement()), flipWindow, SLOT(receiveStop()) );
+    connect( this, SIGNAL(stop()), flipWindow, SLOT(receiveStop()) );
 
     flipWindow->resize(150, 140);
     flipWindow->show();
@@ -239,35 +200,40 @@ void Window::createPlots()
     qDebug("Preparing plots done ...");
 }
 
+void Window::keyPressEvent(QKeyEvent *event)
+{   
+    //qDebug("Pressed key %c", event->key() );
 
-void Window::keyReleaseEvent(QKeyEvent *event)
-{
-    switch (event->key())
-    {
+    switch (event->key()) {
+        case Qt::Key_D:{
+                this->rcvTogglePlot();
+                break;
+            }
+        case Qt::Key_Q:{
+                this->quit();
+                break;
+            }
         case Qt::Key_Space:
         {
             if( event->isAutoRepeat() )
                 break;
 
-            this->msg->setText( "Remain still. Calculating Latency ..." );
-            emit startMeasurement();
+
+            if( this->isRunning ){
+                this->msg->setText( "" );
+                emit stopMeasurement();
+            }
+            else{
+                this->msg->setText( "Remain still. Calculating Latency ..." );
+                emit startMeasurement();
+            }
+
+            isRunning = !isRunning;
+            break;
+        }
+        case Qt::Key_C:
+        {
             emit doReset();
-            break;
-        }
-    }
-}
-
-void Window::keyPressEvent(QKeyEvent *event)
-{
-    //qDebug("Pressed key %c", event->key() );
-
-    switch (event->key()) {
-    case Qt::Key_D:{
-            this->rcvTogglePlot();
-            break;
-        }
-    case Qt::Key_Q:{
-            this->quit();
         }
     }
 }
@@ -394,8 +360,12 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
     sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
     sf.local = this->clock->getCurrentTime();
 
-    if( !this->timer->isActive() )
+    if( this->timer->isActive() )
     {
+        painter.setFont( QFont("Times", 10, QFont::Bold) );
+        painter.setPen( Qt::red );
+        painter.drawText(r, Qt::AlignTop | Qt::AlignHCenter, tr("Stop by pressing Space Bar"));
+    } else {
         painter.setFont( QFont("Times", 20, QFont::Bold) );
         painter.setPen( Qt::red );
         painter.drawText(r, Qt::AlignCenter, tr("Start by pressing Space Bar"));
