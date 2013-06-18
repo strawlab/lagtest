@@ -25,9 +25,11 @@
 #include <QFile>
 #include <QDir>
 
-LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod)
+LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow)
+    : w(NULL), serial(NULL), lm(NULL)
 {
-    this->setupLogWindow();
+    if( createLogWindow )
+        this->setupLogWindow();
 
     this->doNewVersionCheck();
 
@@ -84,7 +86,7 @@ QPlainTextEdit* logWindow = NULL;
 
 
 #if QT_VERSION >= 0x050000
-void myMessageOutput(QtMsgType type, const QString &msg)
+void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 #else
 void myMessageOutput(QtMsgType type, const char *msg)
 #endif
@@ -153,6 +155,9 @@ void LagTest::generateReport()
     text.append( tr("Display Vendor: XXXXXXX \n") );
     text.append( tr("Display Model:  XXXXXXX \n") );
 
+    text.append( "\n" );
+    text.append( "Notes:\n" );
+    text.append( "\n" );
 
     text.append( "\n" );
     text.append( tr("Report generated with LagTest v%1 \n").arg( QCoreApplication::applicationVersion() ) );
@@ -231,11 +236,12 @@ void LagTest::recvVersionCheckFinished(QNetworkReply *reply)
     {
         QByteArray d = reply->readAll();
 
-	QString this_version_json;
-	this_version_json.sprintf("{\"version\"': \"%s\"}", QCoreApplication::applicationVersion().toStdString().c_str());
-	QString available_version_json(d.data());
-	if (this_version_json != available_version_json) {
-	  QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Version update",
+        QString this_version_json;
+        this_version_json.sprintf("{\"version\"': \"%s\"}", QCoreApplication::applicationVersion().toStdString().c_str());
+        QString available_version_json(d.data());
+
+        if (this_version_json != available_version_json) {
+            QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Version update",
 					     tr("New version available! %1 -> %2").arg(this_version_json).arg(available_version_json),
 					     QMessageBox::Ignore | QMessageBox::Ok);
             box->button(QMessageBox::Ok)->setText("Update");
@@ -259,11 +265,11 @@ std::vector<QString> LagTest::discoverComPorts()
 
     qDebug("Discovering Serial Ports ...");
 
-    for(int i = 0; i < 16; i++){    //Only search for ports between COM6-COM16
+    for(int i = 0; i < 16; i++){
         qDebug("Trying %d",i);
         if( !RS232_OpenComport(i, 9600) ){
             ports.push_back(i);
-	    qDebug("  port %d worked",i);
+            qDebug("  port %d worked",i);
             RS232_CloseComport( i );
         }
     }
@@ -275,7 +281,7 @@ std::vector<QString> LagTest::discoverComPorts()
         }
     #else
         for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-            sprintf(cbuffer, "COM%d", (*it)+1);
+            sprintf_s(cbuffer, 10, "COM%d", (*it)+1);
             portsNames.push_back( QString( cbuffer ) );
         }
     #endif
@@ -291,18 +297,19 @@ void LagTest::receiveFlashArduino()
 
 QString LagTest::makeUserSelectPort()
 {
-
     QStringList items;
 
     std::vector<QString> ports = discoverComPorts();
     for(std::vector<QString>::iterator it = ports.begin(); it != ports.end(); ++it) {
         qDebug("Found Port %s" , (*it).toStdString().c_str() );
-	items << (*it).toStdString().c_str();
+        //items << (*it).toStdString().c_str();
+        items << (*it);
     }
 
     QString result;
     bool ok;
-    result = QInputDialog::getItem(w,
+
+    result = QInputDialog::getItem( (this->w != NULL)? w : NULL,
 				   QString("lagtest - select Arduino port"),
 				   QString("Select the port arduino is connected to"),
 				   items,
@@ -327,7 +334,7 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
         port = makeUserSelectPort();
     }
 
-    sprintf(buffer, "-F -v -pm328p -c arduino -b 115200 -P\\\\.\\%s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
+    sprintf_s(buffer, 300, "-F -v -pm328p -c arduino -b 115200 -P\\\\.\\%s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
 
     QString param(QString::fromLocal8Bit(buffer));
     qDebug("Calling %s with %s" , avrDudePath.toStdString().c_str(), param.toStdString().c_str() );

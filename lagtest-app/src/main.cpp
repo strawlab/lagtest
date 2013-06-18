@@ -38,37 +38,30 @@
 **
 ****************************************************************************/
 
-#if QT_VERSION >= 0x050000
-#include <QtGui/QGuiApplication>
-#else
-#include <QtGui/QApplication>
-#endif
-
 #include <QApplication>
 #include <QtGui/QScreen>
 #include <QtCore/qmath.h>
 #include "qthread.h"
+
+#if QT_VERSION >= 0x050000
+    #include <QtGui/QGuiApplication>
+#else
+    #include <QtGui/QApplication>
+#endif
 
 #include "timemodel.h"
 #include "ringbuffer.hpp"
 #include "serialporthandler.h"
 #include "latencymodel.h"
 
-#include <QComboBox>
-#include <QMainWindow>
-#include <QEventLoop>
-#include <QVBoxLayout>
-
-
-#include <QProcess>
 #include "window.h"
-#include "rs232.h"
 #include <QSettings>
-#include <QPlainTextEdit>
 
 #include <QStyleFactory>
 
 #include "lagtest.h"
+
+#include <QDialog>
 
 int main(int argc, char **argv)
 {
@@ -82,9 +75,11 @@ int main(int argc, char **argv)
     //Flasher flashIt( "tools/avrdude.exe", "firmware.hex" );
     exit(0);
 #else
-    //RingBuffer<char>::test();
-    //return 1;
-    LagTest lagtest( 300, 1000, 500);
+//    QDialog d;
+//    d.setWindowTitle("Dialog one");
+//    d.show();
+    LagTest lagtest( 300, 1000, 500 );
+
 #endif
     return app.exec();
 }

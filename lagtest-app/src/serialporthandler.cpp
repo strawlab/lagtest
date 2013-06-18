@@ -8,8 +8,8 @@
 #ifdef LINUX
 #include <unistd.h>
 #endif
-#ifdef WINDOWS
-#inlcude <windows.h>
+#ifdef _WINDOWS
+#include <windows.h>
 #endif
 
 void mySleep(int sleepMs)
@@ -18,7 +18,7 @@ void mySleep(int sleepMs)
 #ifdef LINUX
   usleep(sleepMs * 1000);   // usleep takes sleep time in us
 #endif
-#ifdef WINDOWS
+#ifdef _WINDOWS
   Sleep(sleepMs);
 #endif
 }
@@ -209,24 +209,25 @@ void LagTestSerialPortComm::startCommunication()
 
         nEmptyReads = 0;
         //Read from the serial port at least one complete message
-        while( nBuffer < frameLength )
+        while( (nBuffer < frameLength) && (nEmptyReads < 100) )
         {
             nBytes = this->read(&(buffer[nBuffer]), (bufferSize-nBuffer) );
             nBuffer += nBytes;
             if(nBytes == 0){
                 nEmptyReads ++;
-                mySleep( 10 ) ;
-            }
-
-            if(nEmptyReads > 100){
-                this->sendErrorMsg("Not getting any data from the arduino!");
-                break;
+                mySleep( 1 ) ;
+            } else {
+                nEmptyReads = 0;
             }
         }
         //qDebug("Buffer at %d", nBuffer);
         assert ( nBuffer <= bufferSize );
 
-        if( nBuffer >= frameLength )
+        if( nBuffer < frameLength )
+        {
+            this->sendErrorMsg("Not getting any data from the arduino!");
+        }
+        else
         {
             //Try to read a new frame from the beginning of the buffer
             //If the frame checksum fails, do a frame shift and try again

@@ -18,8 +18,8 @@ class LagTest : public QObject
 {
     Q_OBJECT
 public:
-    explicit LagTest() { }; //Only here to make Flasher easier
-    explicit LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod);
+    explicit LagTest() : w(NULL), serial(NULL), lm(NULL) { }; //Only here to make Flasher easier
+    explicit LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow = true);
     virtual ~LagTest();
 
 public slots:
