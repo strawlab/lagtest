@@ -145,16 +145,16 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
     else
         idx = portName.right(portName.length()-3).toInt() - 1; //From Com11 , extract 11, convert it to int, rs232 starts counting from 0.
 #endif
-
+    
 #ifdef LINUX
     bool success;
+    //fprintf(stderr, "Trying to resolve port name %s", portName.toStdString().c_str());    
     success = RS232_comportName2Idx(portName.toStdString().c_str(), idx );
     if( !success ){
         fprintf(stderr, "Resolving Port name failed! ");
         idx = -1;
     }
 #endif
-
 
     }
     return idx;
@@ -323,7 +323,7 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
     int nReadBytes = 0;
     int t;
     //Read from the serial port at least one complete message
-    while( (nReadBytes < frameLength) && (nEmptyReads < 200) )
+    while( (nReadBytes < frameLength) && (nEmptyReads < 2000) )
     {
         t = this->read(&(buffer[nReadBytes]), (bufferSize-nReadBytes) );
         nReadBytes += t;
@@ -335,7 +335,7 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
         }
     }
 
-    if( nEmptyReads >= 200 ){
+    if( nEmptyReads >= 2000 ){
         emit sendArduinoTimeout();
         return 0;
     }

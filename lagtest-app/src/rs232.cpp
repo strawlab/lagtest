@@ -55,10 +55,10 @@ char comports[30][16]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3","/dev
                        "/dev/rfcomm0","/dev/rfcomm1","/dev/ircomm0","/dev/ircomm1"};
 
 bool RS232_comportName2Idx( const char* name, int& idx )
-{
+{	
     int i=0;
     for(i=0; i < 30; i++){
-        if( !strcmp( name, comports[idx]) ){
+        if( !strcmp( name, comports[i]) ){
             idx = i;
             return( true );
         }
@@ -370,7 +370,7 @@ bool RS232_comportName2Idx( const char* name, int& idx )
 {
     int i=0;
     for(i=0; i < 16; i++){
-        if( !strcmp( name, comports[idx]) ){
+        if( !strcmp( name, comports[i]) ){
             idx = i;
             return( true );
         }

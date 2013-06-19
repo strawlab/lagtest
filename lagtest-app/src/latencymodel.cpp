@@ -1,5 +1,7 @@
 #include "latencymodel.h"
 #include <limits>
+#include <stdlib.h>
+#include <math.h>
 
 LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFlip> *screenFlips, RingBuffer<clockPair> *clock_storage, RingBuffer<adcMeasurement> *adc_storage)
     : QObject(0),
@@ -88,7 +90,7 @@ void LatencyModel::update()
 {
     double latency;
 
-    //qDebug("Latency Update@%g: #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
+    qDebug("Latency Update@%g: #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
 
     //Read all new clock pairs and use them to update the time model
     clockPair cp;
@@ -256,40 +258,63 @@ void LatencyModel::createAvgWindow()
 
 }
 
+static int cmpDouble(const void *p1, const void *p2)
+{
+	double dif;
+	dif = (*(double*)p1) - (*(double*)p2) ;
+ 
+	if( dif < 0.0)
+		return -1;
+	else if( dif > 0.0)
+		return 1;
+	else
+		return 0;
+}
 
 //Calculate the avg and standart derivation for the last measurement window
+//Average the 5 lowerst and highest values of the last measurement window.
+//If min >= max than we assume the sensor is displaced
 bool LatencyModel::detectdisplacedSensor()
 {
     int j;
-    double windowAVG[2] = {0, 0};
-    double windowSTD[2] = {0, 0};
+    double min[2] = {0,0};
+    double max[2] = {0,0};
+    double sorted[2][measurementWindowSize];    
     double t;
 
     for( j=0; j < measurementWindowSize; j++ )
     {
-        windowAVG[WHITE_TO_BLACK] += this->adcData[WHITE_TO_BLACK][this->measurementCnter[WHITE_TO_BLACK]][j];
-        windowAVG[BLACK_TO_WHITE] += this->adcData[BLACK_TO_WHITE][this->measurementCnter[BLACK_TO_WHITE]][j];
-    }
-    windowAVG[WHITE_TO_BLACK] = windowAVG[WHITE_TO_BLACK] / (double) measurementWindowSize;
-    windowAVG[BLACK_TO_WHITE] = windowAVG[BLACK_TO_WHITE] / (double) measurementWindowSize;
-
-    for( j=0; j < measurementWindowSize; j++ )
-    {
-        t = windowAVG[WHITE_TO_BLACK] - this->adcData[WHITE_TO_BLACK][this->measurementCnter[WHITE_TO_BLACK]][j];
-        windowSTD[WHITE_TO_BLACK] += sqrt( t*t );
-
-        t = windowAVG[BLACK_TO_WHITE] - this->adcData[BLACK_TO_WHITE][this->measurementCnter[BLACK_TO_WHITE]][j];
-        windowSTD[BLACK_TO_WHITE] += sqrt( t*t );
+    	sorted[WHITE_TO_BLACK][j] = this->adcData[WHITE_TO_BLACK][this->measurementCnter[WHITE_TO_BLACK]][j];
+    	sorted[BLACK_TO_WHITE][j] = this->adcData[BLACK_TO_WHITE][this->measurementCnter[BLACK_TO_WHITE]][j];
     }
 
-    //qDebug("Analysis W2B: [%g / %g] | B2W: [%g / %g]" , windowSTD[WHITE_TO_BLACK],windowAVG[WHITE_TO_BLACK], windowSTD[BLACK_TO_WHITE],windowAVG[BLACK_TO_WHITE]);
-    if( (windowSTD[WHITE_TO_BLACK] < 2*windowAVG[WHITE_TO_BLACK]) || (windowSTD[BLACK_TO_WHITE] < 2*windowAVG[BLACK_TO_WHITE]) )
-    {
-        qDebug("Too little difference in the measurement values ... W2B: [%g / %g] | B2W: [%g / %g]" , windowSTD[WHITE_TO_BLACK],windowAVG[WHITE_TO_BLACK], windowSTD[BLACK_TO_WHITE],windowAVG[BLACK_TO_WHITE]);
-        return true;
-    } else {
-        return false;
+    qsort(sorted[WHITE_TO_BLACK], measurementWindowSize, sizeof(double), cmpDouble);
+    qsort(sorted[BLACK_TO_WHITE], measurementWindowSize, sizeof(double), cmpDouble);
+    
+    
+    for(j=0; j < 5; j++){
+    	min[WHITE_TO_BLACK] += sorted[WHITE_TO_BLACK][j];
+    	max[WHITE_TO_BLACK] += sorted[WHITE_TO_BLACK][measurementWindowSize-1-j];
+    	
+    	min[BLACK_TO_WHITE] += sorted[BLACK_TO_WHITE][j];
+    	max[BLACK_TO_WHITE] += sorted[BLACK_TO_WHITE][measurementWindowSize-1-j];
     }
+    min[WHITE_TO_BLACK] = ceil ( min[WHITE_TO_BLACK] / 5.0 );
+    max[WHITE_TO_BLACK] = floor ( max[WHITE_TO_BLACK] / 5.0 );
+	
+	min[BLACK_TO_WHITE] = ceil ( min[BLACK_TO_WHITE] / 5.0 );
+	max[BLACK_TO_WHITE] = floor ( max[BLACK_TO_WHITE] / 5.0 );
+	
+	if( min[WHITE_TO_BLACK] >= max[WHITE_TO_BLACK] ){
+		qDebug("Measurement Window seems to flat. Mins [%f/%f] , Max [%f/%f]", min[WHITE_TO_BLACK] , min[BLACK_TO_WHITE], max[WHITE_TO_BLACK], max[BLACK_TO_WHITE]);
+		return true;
+	}
+	else if( min[BLACK_TO_WHITE] >= max[BLACK_TO_WHITE] ){
+		qDebug("Measurement Window seems to flat. Mins [%f/%f] , Max [%f/%f]", min[WHITE_TO_BLACK] , min[BLACK_TO_WHITE], max[WHITE_TO_BLACK], max[BLACK_TO_WHITE]);
+		return true;
+	} else {
+		return false;
+	}
 }
 
 bool LatencyModel::findMeasurementWindow(screenFlip sf )

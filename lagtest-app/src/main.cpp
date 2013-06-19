@@ -80,7 +80,7 @@ int main(int argc, char **argv)
 //    QDialog d;
 //    d.setWindowTitle("Dialog one");
 //    d.show();
-    LagTest lagtest( 300, 1000, 500 );
+    LagTest lagtest( 300, 1000, 500);
     lagtest.setProperty("ArudinoFirmwareVersion", 3);
 
 #endif

@@ -303,11 +303,11 @@ std::vector<QString> LagTest::discoverComPorts()
 {
     std::vector<int> ports;
     std::vector<QString> portsNames;
-    char cbuffer[10];
+    char cbuffer[20];
 
     qDebug("Discovering Serial Ports ...");
 
-    for(int i = 0; i < 16; i++){
+    for(int i = 0; i < 29; i++){
         qDebug("Trying %d",i);
         if( !RS232_OpenComport(i, 9600) ){
             ports.push_back(i);
@@ -317,8 +317,12 @@ std::vector<QString> LagTest::discoverComPorts()
     }
 
     #ifdef __linux__
+    	
         for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-            sprintf(cbuffer, "port %d", (*it));
+            
+        	if( ! RS232_comportIdx2Name((*it), cbuffer) ){
+        		sprintf(cbuffer, "Unknown %d", (*it));	        		
+        	}
             portsNames.push_back( QString( cbuffer ) );
         }
     #else
@@ -370,7 +374,7 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
         port = makeUserSelectPort();
     }
 
-    sprintf_s(buffer, 300, "-F -v -pm328p -c arduino -b 115200 -P\\\\.\\%s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
+    sprintf(buffer, "-F -v -pm328p -c arduino -b 115200 -P\\\\.\\%s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
 
     QString param(QString::fromLocal8Bit(buffer));
     qDebug("Calling %s with %s" , avrDudePath.toStdString().c_str(), param.toStdString().c_str() );
