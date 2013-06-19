@@ -54,7 +54,29 @@ char comports[30][16]={"/dev/ttyS0","/dev/ttyS1","/dev/ttyS2","/dev/ttyS3","/dev
                        "/dev/ttyAMA0","/dev/ttyAMA1","/dev/ttyACM0","/dev/ttyACM1",
                        "/dev/rfcomm0","/dev/rfcomm1","/dev/ircomm0","/dev/ircomm1"};
 
+bool RS232_comportName2Idx( const char* name, int& idx )
+{
+    int i=0;
+    for(i=0; i < 30; i++){
+        if( !strcmp( name, comports[idx]) ){
+            idx = i;
+            return( true );
+        }
+    }
+    return( false );
+}
 
+bool RS232_comportIdx2Name( int idx, char* name )
+{
+    if((idx>29)||(idx<0))
+    {
+      printf("illegal comport number\n");
+      return( false );
+    }
+
+    strncpy(name, comports[idx], 16);
+    return( true );
+}
 
 int RS232_OpenComport(int comport_number, int baudrate)
 {
@@ -336,6 +358,39 @@ char comports[16][10]={"\\\\.\\COM1",  "\\\\.\\COM2",  "\\\\.\\COM3",  "\\\\.\\C
                        "\\\\.\\COM5",  "\\\\.\\COM6",  "\\\\.\\COM7",  "\\\\.\\COM8",
                        "\\\\.\\COM9",  "\\\\.\\COM10", "\\\\.\\COM11", "\\\\.\\COM12",
                        "\\\\.\\COM13", "\\\\.\\COM14", "\\\\.\\COM15", "\\\\.\\COM16"};
+
+//char* RS232_getComports(int& nEntries, int& length )
+//{
+//    nEntries = 30;
+//    length = 16;
+//    return comports;
+//}
+
+bool RS232_comportName2Idx( const char* name, int& idx )
+{
+    int i=0;
+    for(i=0; i < 16; i++){
+        if( !strcmp( name, comports[idx]) ){
+            idx = i;
+            return( true );
+        }
+    }
+    return( false );
+}
+
+bool RS232_comportIdx2Name( int idx, char* name )
+{
+    if((idx>15)||(idx<0))
+    {
+      printf("illegal comport number\n");
+      return( false );
+    }
+
+    strncpy(name, comports[idx], 10);
+    return( true );
+}
+
+
 
 char baudr[64];
 

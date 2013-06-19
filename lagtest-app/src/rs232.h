@@ -75,6 +75,10 @@ void RS232_disableDTR(int);
 void RS232_enableRTS(int);
 void RS232_disableRTS(int);
 
+// Add helper functions to resolve port names and indeces
+bool RS232_comportName2Idx(const char *name, int& idx );
+bool RS232_comportIdx2Name( int idx, char* name );
+
 
 #ifdef __cplusplus
 } /* extern "C" */
