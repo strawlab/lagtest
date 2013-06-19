@@ -45,8 +45,10 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     flipWindow = new flashingBGQPaint(500, tm, screenFlips);
 
     connect( this, SIGNAL(startMeasurement()), flipWindow, SLOT(receiveStart()) );
-    connect( this, SIGNAL(stopMeasurement()), flipWindow, SLOT(receiveStop()) );
+    connect( this, SIGNAL(startMeasurement()), this, SLOT(recvStartMeasurement()) );
+    connect( this, SIGNAL(stopMeasurement()), this, SLOT(recvStopMeasurement()) );
     connect( this, SIGNAL(stop()), flipWindow, SLOT(receiveStop()) );
+
 
     flipWindow->resize(150, 140);
     flipWindow->show();
@@ -224,11 +226,9 @@ void Window::keyPressEvent(QKeyEvent *event)
                 emit stopMeasurement();
             }
             else{
-                this->msg->setText( "Remain still. Calculating Latency ..." );
+                this->msg->setText( "Synchronizing clocks ..." );
                 emit startMeasurement();
             }
-
-            isRunning = !isRunning;
             break;
         }
         case Qt::Key_C:
@@ -236,6 +236,17 @@ void Window::keyPressEvent(QKeyEvent *event)
             emit doReset();
         }
     }
+}
+
+void Window::recvStartMeasurement()
+{
+    this->isRunning = true;
+}
+
+void Window::recvStopMeasurement()
+{
+    this->isRunning = false;
+    emit stop();
 }
 
 void Window::rcvShowAbout()
@@ -375,10 +386,12 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
 }
 
 void flashingBGQPaint::receiveStart(){
-    this->timer->start();
+    qDebug("Starting flasher ...");
+    this->timer->start();    
 }
 
 void flashingBGQPaint::receiveStop(){
+    qDebug("Stoping flasher ...");
     this->timer->stop();
     this->drawWhiteBG = false;
     emit update();

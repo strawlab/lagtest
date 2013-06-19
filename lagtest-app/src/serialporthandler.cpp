@@ -313,7 +313,7 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
     int nReadBytes = 0;
     int t;
     //Read from the serial port at least one complete message
-    while( (nReadBytes < frameLength) && (nEmptyReads < 1000) )
+    while( (nReadBytes < frameLength) && (nEmptyReads < 200) )
     {
         t = this->read(&(buffer[nReadBytes]), (bufferSize-nReadBytes) );
         nReadBytes += t;
@@ -325,7 +325,7 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
         }
     }
 
-    if( nEmptyReads >= 1000 ){
+    if( nEmptyReads >= 200 ){
         emit sendArduinoTimeout();
         return 0;
     }

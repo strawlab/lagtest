@@ -17,12 +17,12 @@ LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFl
 
 void LatencyModel::stop()
 {
-    this->timer->stop();
-    this->resetHistory();
+    this->timer->stop();    
 }
 
 void LatencyModel::start()
 {
+    this->resetHistory();
     QTimer* t = new QTimer();
     t->setSingleShot(true);
     connect(t, SIGNAL(timeout()), this, SLOT( realStart()) );
@@ -88,7 +88,7 @@ void LatencyModel::update()
 {
     double latency;
 
-    qDebug("Latency Update@g: #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
+    //qDebug("Latency Update@%g: #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
 
     //Read all new clock pairs and use them to update the time model
     clockPair cp;

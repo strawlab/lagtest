@@ -55,6 +55,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( w, SIGNAL(doReset()), lm, SLOT(reset()) );
     QObject::connect( w, SIGNAL(startMeasurement()), serial, SLOT(start()) );
     QObject::connect( w, SIGNAL(startMeasurement()), lm, SLOT(start()) );
+    QObject::connect( w, SIGNAL(stopMeasurement()), lm, SLOT(stop()) );
     QObject::connect( w, SIGNAL(startMeasurement()), tm, SLOT(start()) );
     QObject::connect( w, SIGNAL(generateReport()), this, SLOT( generateReport() ) );
     QObject::connect( w, SIGNAL(flashArduino()), this, SLOT( recvFlashArduino() ) );
@@ -78,7 +79,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 
     QObject::connect( this, SIGNAL(stopMeasurement()), serial, SLOT( stop()) );
     QObject::connect( this, SIGNAL(stopMeasurement()), lm, SLOT( stop()) );
-    QObject::connect( this, SIGNAL(stopMeasurement()), w, SIGNAL( stop()) );
+    QObject::connect( this, SIGNAL(stopMeasurement()), w, SLOT( recvStopMeasurement()) );
 
     w->show();
 }
@@ -146,8 +147,9 @@ void LagTest::recvSerialError(QString msg)
 
 void LagTest::recvArduinoTimeout()
 {
-    //emit stopMeasurement();
-    MessageBox(NULL, "Unable to reach arduino!", "Serial Timeout", MB_OK | MB_ICONHAND);
+    emit stopMeasurement();
+    QMessageBox b(QMessageBox::Warning,  "Serial Timeout", "Unable to communicate with arduino!", QMessageBox::Ok );
+    b.exec();
 }
 
 void LagTest::recvArduinoFirmwareVersion(int version)

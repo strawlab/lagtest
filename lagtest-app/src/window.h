@@ -102,6 +102,8 @@ signals:
     void stop();
 
 public slots:
+    void recvStartMeasurement();
+    void recvStopMeasurement();
     void receiveUnstableLatency();
     void receiveStableLatency();
     void receiveInvalidLatency();
