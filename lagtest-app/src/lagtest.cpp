@@ -295,7 +295,7 @@ void LagTest::recvVersionCheckFinished(QNetworkReply *reply)
         QByteArray d = reply->readAll();
 
         QString this_version_json;
-        this_version_json.sprintf("{\"version\"': \"%s\"}", QCoreApplication::applicationVersion().toStdString().c_str());
+        this_version_json.sprintf("{\"version\": \"%s\"}", QCoreApplication::applicationVersion().toStdString().c_str());
         QString available_version_json(d.data());
 
         if (this_version_json != available_version_json) {
