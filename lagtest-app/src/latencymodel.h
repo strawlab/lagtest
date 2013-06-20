@@ -18,7 +18,7 @@ public:
     const static int latencyHistorySize = 5;
     const static int latencyStableSize = 5;
     const static int flipHistorySize = 5;
-    const static int measurementWindowSize = 100; //Take 100 adc samples before and after the screen flip
+    const static int measurementWindowSize = 150; //Take X adc samples before and after the screen flip
     const static int measurementHistoryLength = 10; //Keep the last 10 measurement windows and do averaging over them
 
     typedef uint8_t adcWindow[2][measurementHistoryLength][measurementWindowSize];

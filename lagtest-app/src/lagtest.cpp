@@ -38,8 +38,8 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     //tm.testModelGenerator();
 
     RingBuffer<screenFlip>* screenFlips = new RingBuffer<screenFlip>(20);
-    RingBuffer<clockPair>* arduinoClock = new RingBuffer<clockPair>(100);
-    RingBuffer<adcMeasurement>* adcValues = new RingBuffer<adcMeasurement>(20000);
+    RingBuffer<clockPair>* arduinoClock = new RingBuffer<clockPair>(20);
+    RingBuffer<adcMeasurement>* adcValues = new RingBuffer<adcMeasurement>(2000);
 
     this->loadSettings();
 

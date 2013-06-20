@@ -115,8 +115,8 @@ void Window::createPlots()
     cPlots[BLACK_TO_WHITE]->setCanvasBackground(QBrush(Qt::lightGray));
     cPlots[WHITE_TO_BLACK]->setCanvasBackground(QBrush(Qt::lightGray));
 
-    //cPlots[BLACK_TO_WHITE]->setAxisScale(QwtPlot::yLeft, -10, 50);
-    //cPlots[WHITE_TO_BLACK]->setAxisScale(QwtPlot::yLeft, -10, 50);
+    cPlots[WHITE_TO_BLACK]->setAxisScale(QwtPlot::xBottom, 0, 100); cPlots[WHITE_TO_BLACK]->replot();
+	cPlots[BLACK_TO_WHITE]->setAxisScale(QwtPlot::xBottom, 0, 100); cPlots[BLACK_TO_WHITE]->replot();
     //cPlots[BLACK_TO_WHITE]->setFooter( "Latency [ms]" );
     cPlots[BLACK_TO_WHITE]->setAxisTitle( QwtPlot::xBottom, "Latency [ms]" );
     cPlots[WHITE_TO_BLACK]->setAxisTitle( QwtPlot::xBottom, "Latency [ms]" );
@@ -231,9 +231,13 @@ void Window::keyPressEvent(QKeyEvent *event)
             }
             break;
         }
-        case Qt::Key_C:
-        {
+        case Qt::Key_L:{
+			emit showLogWindow();
+			break;
+		}
+        case Qt::Key_C:{
             emit doReset();
+            break;
         }
     }
 }
@@ -317,10 +321,13 @@ void Window::receiveLatencyUpdate(LatencyModel* lm)
     this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f|%.2f ms", ll/1000000.0, al/1000000.0, lm->getAvgLatencySD()/1000000.0) );
 
     double x[2], y[2];
-    x[0] = al / 1000000.0; y[0] = -10.0;
+    x[0] = al / 1000000.0; y[0] = -5.0;
     x[1] = al / 1000000.0; y[1] = this->meanCurves[WHITE_TO_BLACK]->maxYValue() + 10;
     this->vLine[WHITE_TO_BLACK]->setSamples( x, y, 2 );
     this->vLine[BLACK_TO_WHITE]->setSamples( x, y, 2 );
+
+    this->cPlots[WHITE_TO_BLACK]->setAxisScale(QwtPlot::xBottom, 0, (al / 1000000.0) * 2); this->cPlots[WHITE_TO_BLACK]->replot();
+    this->cPlots[BLACK_TO_WHITE]->setAxisScale(QwtPlot::xBottom, 0, (al / 1000000.0) * 2); this->cPlots[BLACK_TO_WHITE]->replot();
 
     this->vLine[WHITE_TO_BLACK]->show();
     this->vLine[BLACK_TO_WHITE]->show();
