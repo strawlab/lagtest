@@ -45,7 +45,6 @@ extern "C" {
 #include <string.h>
 
 
-
 #ifdef __linux__
 
 #include <termios.h>
@@ -57,6 +56,8 @@ extern "C" {
 #include <limits.h>
 
 #else
+
+#pragma warning( disable : 4996 )
 
 #include <windows.h>
 
