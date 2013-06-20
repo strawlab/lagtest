@@ -26,6 +26,8 @@
 #include <QFile>
 #include <QDir>
 
+#include <QTextStream>
+
 LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow)
     : w(NULL), serial(NULL), lm(NULL)
 {
@@ -201,7 +203,9 @@ void LagTest::generateReport()
 
     qDebug("Report: \n%s", text.toStdString().c_str());
 
-    QString fileName = QFileDialog::getSaveFileName(0, tr("Save Protocol"), "C:", tr("Text File (*.txt)"));
+
+    QString fileName = QFileDialog::getSaveFileName(0, tr("Save Protocol"), "LagTestProtocol", tr("Text File (*.txt)"));
+
     QFile f(fileName);
     if( f.open( QIODevice::WriteOnly | QIODevice::Text ) )
     {
@@ -238,6 +242,18 @@ QString LagTest::getOS()
             return "Windows 8";
         break;
     }
+#endif
+
+#ifdef Q_OS_LINUX
+    QProcess proc;
+    //process.execute ("uname", "-vms");
+    QStringList args;
+    args << "-roms";
+	proc.start("uname", args);
+	proc.waitForFinished(); // didn't work without this
+
+
+	return( proc.readAll() );
 #endif
 
     return "UNKNOWN OS";
