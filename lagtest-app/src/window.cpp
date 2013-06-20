@@ -255,7 +255,15 @@ void Window::recvStopMeasurement()
 
 void Window::rcvShowAbout()
 {
-    QMessageBox::about(this, tr("Lagtest - How slow is your display?"), tr("Some nice text here ...") );
+    QString text;
+    text += tr("Lagtest is designed by Strawlab <br>at the Research Institute of Molecular Pathology in Vienna<br><br>");
+    text += tr("For more information go to <a href='http://lagtest.org'>lagtest.org</a><br><br>");
+    text += tr("You are running lagtest version %1<br>").arg(QCoreApplication::applicationVersion());
+
+    //QMessageBox::about(this, tr("Lagtest - How slow is your display?"), text );
+    QMessageBox b(QMessageBox::NoIcon, tr("Lagtest - How slow is your display?"), text, QMessageBox::NoButton, this, Qt::Dialog );
+    b.setTextFormat(Qt::RichText);
+    b.exec();
 }
 
 void Window::rcvTogglePlot()
