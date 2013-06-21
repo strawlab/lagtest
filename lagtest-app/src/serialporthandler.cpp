@@ -5,18 +5,8 @@
 #include <QVariant>
 
 #ifdef Q_OS_WIN
-
-#elif Q_OS_LINUX
-
-#else
-    ERROR UNDEFINED SYSTEM
-#endif
-
-
-
-#ifdef Q_OS_WIN
     #include <windows.h>
-#elif Q_OS_LINUX
+#elif defined( Q_OS_LINUX )
     #include <unistd.h>
 #else
     ERROR UNDEFINED SYSTEM
@@ -28,7 +18,7 @@ void mySleep(int sleepMs)
 
 #ifdef Q_OS_WIN
     Sleep(sleepMs);
-#elif Q_OS_LINUX
+#elif defined( Q_OS_LINUX )
     usleep(sleepMs * 1000);   // usleep takes sleep time in us
 #else
     ERROR UNDEFINED SYSTEM
@@ -171,7 +161,7 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
             idx = -1;
         else
             idx = portName.right(portName.length()-3).toInt() - 1; //From Com11 , extract 11, convert it to int, rs232 starts counting from 0.
-#elif Q_OS_LINUX
+#elif defined( Q_OS_LINUX )
         bool success;
         //fprintf(stderr, "Trying to resolve port name %s", portName.toStdString().c_str());
         success = RS232_comportName2Idx(portName.toStdString().c_str(), idx );

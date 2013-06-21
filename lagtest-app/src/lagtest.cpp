@@ -251,7 +251,7 @@ QString LagTest::getOS()
             return "Windows 8";
         break;
     }
-#elif Q_OS_LINUX
+#elif defined( Q_OS_LINUX )
     QProcess proc;
     //process.execute ("uname", "-vms");
     QStringList args;
@@ -341,7 +341,7 @@ std::vector<QString> LagTest::discoverComPorts()
         sprintf_s(cbuffer, 10, "COM%d", (*it)+1);
         portsNames.push_back( QString( cbuffer ) );
     }
-#elif Q_OS_LINUX
+#elif defined( Q_OS_LINUX )
     for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it)
     {
         if( ! RS232_comportIdx2Name((*it), cbuffer) ){
