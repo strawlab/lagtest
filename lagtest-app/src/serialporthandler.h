@@ -65,6 +65,9 @@ public:
     explicit LagTestSerialPortComm(QString port, int baudRate, TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);
     static int getPortIdx(QString portName);
 
+    class InvalidFrameException: public std::exception {};
+    class ReadErrorException: public std::exception {};
+
 signals:
     void finished();
     void sendDebugMsg(QString msg);
@@ -88,7 +91,7 @@ private:
     void sendArduinoTimeRequest();
     void sendArduinoVersionRequest();
     int readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize);
-    bool getNextFrame(timed_sample_t& frame , double &timeRead);
+    void getNextFrame(timed_sample_t& frame , double &timeRead);
 
     bool stopThread;
 

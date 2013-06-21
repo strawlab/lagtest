@@ -65,8 +65,6 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( w, SIGNAL(showLogWindow()), this, SLOT( recvShowLogWindow() ) );
     QObject::connect( w, SIGNAL(selectPort()), this, SLOT( recvSelectPort() ) );
 
-    //QObject::connect( &w, &Window::flashArduino, getArduinoPort );
-
 
     QObject::connect( lm, SIGNAL(signalStableLatency()),        w, SLOT(receiveStableLatency()) );
     QObject::connect( lm, SIGNAL(signalUnstableLatency()),      w, SLOT(receiveUnstableLatency()) );

@@ -245,61 +245,57 @@ void LagTestSerialPortComm::startCommunication()
             this->sendRequest = false;
         }
 
-        validFrame = this->getNextFrame( frame, now );
-        frameCnter++;
-
-        if( validFrame )
+        try
         {
-            //qDebug( " Frame: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+        	this->getNextFrame( frame, now );
+        	frameCnter++;
 
-            switch(frame.cmd)
-            {
-                case 'H'://ADC measurement
-                {
-                    adcM.adc = frame.value;
-                    adcM.arduino_epoch = frame.epoch;
-                    adcM.arduino_ticks = frame.ticks;
-                    this->adc_storage->put( &adcM );
-                    //qDebug("Received a adc measurement");
-                    break;
-                }
-                case 'P': //Clock response
-                {
-                //Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
-                    if( frame.value > this->ntimeRequests ){
-                        //qCritical("Arduino returns invalid reference id!");
-                        this->sendErrorMsg("Arduino returns invalid reference id!");
-                    } else {
-                        sendTime = this->timeRequests[ frame.value ];
-                        d1 = (now - sendTime)/2.0;
-                        if( d1 <= 0){
-                            //qCritical("somethign strange happens here ... %g", d1 );
-                            QString s;
-                            this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
-                            d1 = 0;
-                        }
-                        cp.local = sendTime + d1;
-                        cp.arduino_epoch = frame.epoch;
-                        cp.arduino_ticks = frame.ticks;
-                        this->clock_storage->put( &cp );
-                        //qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
-                    }
-                    break;
-                }
+			//qDebug( " Frame: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
 
-//                case 'V':   //Version Response
-//                {
-//                    emit sendFirmwareVersion( frame.value );
-//                    break;
-//                }
+			switch(frame.cmd)
+			{
+				case 'H'://ADC measurement
+				{
+					adcM.adc = frame.value;
+					adcM.arduino_epoch = frame.epoch;
+					adcM.arduino_ticks = frame.ticks;
+					this->adc_storage->put( &adcM );
+					//qDebug("Received a adc measurement");
+					break;
+				}
+				case 'P': //Clock response
+				{
+				//Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
+					if( frame.value > this->ntimeRequests ){
+						//qCritical("Arduino returns invalid reference id!");
+						this->sendErrorMsg("Arduino returns invalid reference id!");
+					} else {
+						sendTime = this->timeRequests[ frame.value ];
+						d1 = (now - sendTime)/2.0;
+						if( d1 <= 0){
+							//qCritical("somethign strange happens here ... %g", d1 );
+							QString s;
+							this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
+							d1 = 0;
+						}
+						cp.local = sendTime + d1;
+						cp.arduino_epoch = frame.epoch;
+						cp.arduino_ticks = frame.ticks;
+						this->clock_storage->put( &cp );
+						//qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
+					}
+					break;
+				}
 
-                default:{
-                    //qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
-                }
-            }
-        } else {
-            //qDebug( " Invalid Frame ... ");
-            emit sendErrorMsg("Invalid Frame ... ");
+				default:{
+					//qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+					break;
+				}
+			}
+        } catch ( InvalidFrameException &e){
+        	//Nothing special here, invalid frames can happen, specially at the beginning
+        } catch ( ReadErrorException &e ) {
+        	emit sendArduinoTimeout();
         }
     }
 
@@ -338,27 +334,31 @@ void LagTestSerialPortComm::doVersionCheck()
     while( (!gotVersionReply) && (garbageCnt < 100) )
     {
         this->sendArduinoVersionRequest();
-        validFrame = this->getNextFrame( frame, now );
 
-        if( validFrame )
+        try
         {
-            switch(frame.cmd)
+        	this->getNextFrame( frame, now );
+
+        	switch(frame.cmd)
             {
                 case 'V':   //Version Response
                 {
-                    if( !gotVersionReply )
-                    {
-                        emit sendFirmwareVersion( frame.value );
-                        gotVersionReply = true;
-                    }
+                    emit sendFirmwareVersion( frame.value );
+					gotVersionReply = true;
                     break;
                 }
                 default:{
                     garbageCnt++;
+                    break;
                 }
             }
-        } else {
-            garbageCnt++;
+        } catch ( InvalidFrameException &e ){
+        	garbageCnt++;
+        } catch ( ReadErrorException &e ){
+        	sendDebugMsg( "Stop version check, cant read from Arduino" );
+			this->closeSerialPort();
+			emit sendArduinoTimeout();
+			return;
         }
     }
 
@@ -404,22 +404,21 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
         nReadBytes += t;
         if(t == 0){
             nEmptyReads ++;
-            mySleep( 1 ) ;
+            mySleep( 5 ) ;
         } else {
             nEmptyReads = 0;
         }
     }
 
     if( nEmptyReads >= 400 ){
-        emit sendArduinoTimeout();
-        return 0;
+        throw ReadErrorException();
     }
 
     return nReadBytes;
 }
 
 
-bool LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRead )
+void LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRead )
 {
     const int frameLength = 9;
     const int bufferSize = 100;
@@ -456,7 +455,9 @@ bool LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRea
     nBuffer -= i;
     assert( nBuffer >= 0 );
 
-    return validFrame;
+    if( !validFrame ){
+    	throw InvalidFrameException();
+    }
 }
 
 
