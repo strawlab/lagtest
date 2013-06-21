@@ -31,6 +31,8 @@
 LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow)
     : w(NULL), serial(NULL), lm(NULL)
 {
+
+
     if( createLogWindow )
         this->setupLogWindow();
 
@@ -83,19 +85,19 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( this, SIGNAL(sendFirmwareVersionCheck()), serial, SLOT(doVersionCheck()) );
     QObject::connect( this, SIGNAL(stopMeasurement()), lm, SLOT( stop()) );
     QObject::connect( this, SIGNAL(stopMeasurement()), w, SLOT( recvStopMeasurement()) );
-
-    w->show();
-    emit sendFirmwareVersionCheck();
 }
 
 LagTest::~LagTest()
 {
 }
 
+void LagTest::start()
+{
+    this->w->show();
+    emit sendFirmwareVersionCheck();
+}
 
 QPlainTextEdit* logWindow = NULL;
-
-
 
 #if QT_VERSION >= 0x050000
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -174,7 +176,7 @@ void LagTest::recvArduinoFirmwareVersion(int version)
                      QMessageBox::Ignore | QMessageBox::Ok);
         box->button(QMessageBox::Ok)->setText("Flash Arduino");
         int buttonPressed = box->exec();
-        if( buttonPressed == QMessageBox::Ok ) {
+        if( buttonPressed == QMessageBox::Ok ) {            
             this->recvFlashArduino();
         }
     }

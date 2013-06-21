@@ -22,6 +22,7 @@ public:
     explicit LagTest() : w(NULL), serial(NULL), lm(NULL) { }; //Only here to make Flasher easier
     explicit LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow = true);
     virtual ~LagTest();
+    void start();
 
 signals:
     void stopMeasurement();

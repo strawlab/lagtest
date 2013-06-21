@@ -315,12 +315,6 @@ void LagTestSerialPortComm::doVersionCheck()
     //throw exception();
     sendDebugMsg("Starting Arduino Version Check ...");
 
-//    if( this->thread() )
-//    {
-//        sendErrorMsg("Cant run Version check. Main Communication thread is still running!");
-//        return;
-//    }
-
     this->init();
 
     try{
@@ -344,7 +338,6 @@ void LagTestSerialPortComm::doVersionCheck()
             {
                 case 'V':   //Version Response
                 {
-                    emit sendFirmwareVersion( frame.value );
 					gotVersionReply = true;
                     break;
                 }
@@ -363,12 +356,14 @@ void LagTestSerialPortComm::doVersionCheck()
         }
     }
 
-    if( !gotVersionReply ){
-        emit sendArduinoDetectionFailed();
-    }
-
     sendDebugMsg( "Finished version check" );
     this->closeSerialPort();
+
+    if( !gotVersionReply ){
+        emit sendArduinoDetectionFailed();
+    } else {
+        emit sendFirmwareVersion( frame.value );
+    }
 }
 
 void LagTestSerialPortComm::sendArduinoVersionRequest()

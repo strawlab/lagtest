@@ -77,11 +77,16 @@ int main(int argc, char **argv)
     //Flasher flashIt( "tools/avrdude.exe", "firmware.hex" );
     exit(0);
 #else
+
+//TIP: In case strange segment faults apear on start, try to compile a minimalistic Dialog instead of the app
 //    QDialog d;
 //    d.setWindowTitle("Dialog one");
 //    d.show();
+
+    //LagTest lagtest( 300, 1000, 500, false);  //Dissable log window, writing output to the console. Can be usefull for problems happening during startup
     LagTest lagtest( 300, 1000, 500);
-    lagtest.setProperty("ArudinoFirmwareVersion", 3);
+    lagtest.setProperty("ArudinoFirmwareVersion", 2);
+    lagtest.start();
 
 #endif
     return app.exec();
