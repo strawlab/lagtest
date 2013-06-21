@@ -4,22 +4,34 @@
 #include <QCoreApplication>
 #include <QVariant>
 
+#ifdef Q_OS_WIN
 
-#ifdef LINUX
-#include <unistd.h>
+#elif Q_OS_LINUX
+
+#else
+    ERROR UNDEFINED SYSTEM
 #endif
-#ifdef _WINDOWS
-#include <windows.h>
+
+
+
+#ifdef Q_OS_WIN
+    #include <windows.h>
+#elif Q_OS_LINUX
+    #include <unistd.h>
+#else
+    ERROR UNDEFINED SYSTEM
 #endif
 
 void mySleep(int sleepMs)
 {
   // From http://stackoverflow.com/questions/10918206/cross-platform-sleep-function-for-c
-#ifdef LINUX
-  usleep(sleepMs * 1000);   // usleep takes sleep time in us
-#endif
-#ifdef _WINDOWS
-  Sleep(sleepMs);
+
+#ifdef Q_OS_WIN
+    Sleep(sleepMs);
+#elif Q_OS_LINUX
+    usleep(sleepMs * 1000);   // usleep takes sleep time in us
+#else
+    ERROR UNDEFINED SYSTEM
 #endif
 }
 
@@ -154,21 +166,21 @@ int LagTestSerialPortComm::getPortIdx(QString portName)
     if( portName.length() >= 4)
     {
 
-#ifdef _WINDOWS
-    if( !portName.contains("COM", Qt::CaseSensitive) )
-        idx = -1;
-    else
-        idx = portName.right(portName.length()-3).toInt() - 1; //From Com11 , extract 11, convert it to int, rs232 starts counting from 0.
-#endif
-    
-#ifdef LINUX
-    bool success;
-    //fprintf(stderr, "Trying to resolve port name %s", portName.toStdString().c_str());    
-    success = RS232_comportName2Idx(portName.toStdString().c_str(), idx );
-    if( !success ){
-        fprintf(stderr, "Resolving Port name failed! ");
-        idx = -1;
-    }
+#ifdef Q_OS_WIN
+        if( !portName.contains("COM", Qt::CaseSensitive) )
+            idx = -1;
+        else
+            idx = portName.right(portName.length()-3).toInt() - 1; //From Com11 , extract 11, convert it to int, rs232 starts counting from 0.
+#elif Q_OS_LINUX
+        bool success;
+        //fprintf(stderr, "Trying to resolve port name %s", portName.toStdString().c_str());
+        success = RS232_comportName2Idx(portName.toStdString().c_str(), idx );
+        if( !success ){
+            fprintf(stderr, "Resolving Port name failed! ");
+            idx = -1;
+        }
+#else
+    ERROR UNDEFINED SYSTEM
 #endif
 
     }
@@ -292,9 +304,9 @@ void LagTestSerialPortComm::startCommunication()
 					break;
 				}
 			}
-        } catch ( InvalidFrameException &e){
+        } catch ( InvalidFrameException ){
         	//Nothing special here, invalid frames can happen, specially at the beginning
-        } catch ( ReadErrorException &e ) {
+        } catch ( ReadErrorException ) {
         	emit sendArduinoTimeout();
         }
     }
@@ -305,8 +317,7 @@ void LagTestSerialPortComm::startCommunication()
 
 void LagTestSerialPortComm::doVersionCheck()
 {
-    bool gotVersionReply;
-    bool validFrame;
+    bool gotVersionReply;    
     int garbageCnt;
     timed_sample_t frame;
     double now;
@@ -352,9 +363,9 @@ void LagTestSerialPortComm::doVersionCheck()
                     break;
                 }
             }
-        } catch ( InvalidFrameException &e ){
+        } catch ( InvalidFrameException ){
         	garbageCnt++;
-        } catch ( ReadErrorException &e ){
+        } catch ( ReadErrorException ){
         	sendDebugMsg( "Stop version check, cant read from Arduino" );
 			this->closeSerialPort();
 			emit sendArduinoTimeout();

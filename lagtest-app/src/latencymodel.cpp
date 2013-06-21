@@ -282,7 +282,6 @@ bool LatencyModel::detectdisplacedSensor()
     double min[2] = {0,0};
     double max[2] = {0,0};
     double sorted[2][measurementWindowSize];    
-    double t;
 
     for( j=0; j < measurementWindowSize; j++ )
     {

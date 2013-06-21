@@ -39,8 +39,6 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
     # Needed define by Qwt
     add_definitions(-DQWT_DLL)
-    
-    add_definitions(-D_WINDOWS)
 
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
@@ -53,8 +51,7 @@ IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(EIGEN3_INCLUDE_DIR "/usr/include/eigen3") # ubuntu: libeigen3-dev
     set(QWT_INC_PATH "/usr/include/qwt") # ubuntu: libqwt-dev
     find_library( QWT_LIBRARY NAMES qwt PATHS "/usr/lib" )
-    
-    add_definitions(-DLINUX)
+        
 ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
 

@@ -227,7 +227,7 @@ void LagTest::generateReport()
 
 QString LagTest::getOS()
 {
-    qDebug( "System gets %d" , QSysInfo::WordSize );
+//qDebug( "System gets %d" , QSysInfo::WordSize );
 #ifdef Q_OS_WIN
     switch( QSysInfo::windowsVersion() )
     {
@@ -251,20 +251,17 @@ QString LagTest::getOS()
             return "Windows 8";
         break;
     }
-#endif
-
-#ifdef Q_OS_LINUX
+#elif Q_OS_LINUX
     QProcess proc;
     //process.execute ("uname", "-vms");
     QStringList args;
     args << "-roms";
-	proc.start("uname", args);
-	proc.waitForFinished(); // didn't work without this
-
-
-	return( proc.readAll() );
+    proc.start("uname", args);
+    proc.waitForFinished();
+    return( proc.readAll() );
+#else
+    ERROR UNDEFINED SYSTEM
 #endif
-
     return "UNKNOWN OS";
 }
 
@@ -339,21 +336,22 @@ std::vector<QString> LagTest::discoverComPorts()
         }
     }
 
-    #ifdef __linux__
-    	
-        for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-            
-        	if( ! RS232_comportIdx2Name((*it), cbuffer) ){
-        		sprintf(cbuffer, "Unknown %d", (*it));	        		
-        	}
-            portsNames.push_back( QString( cbuffer ) );
+#ifdef Q_OS_WIN
+    for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
+        sprintf_s(cbuffer, 10, "COM%d", (*it)+1);
+        portsNames.push_back( QString( cbuffer ) );
+    }
+#elif Q_OS_LINUX
+    for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it)
+    {
+        if( ! RS232_comportIdx2Name((*it), cbuffer) ){
+            sprintf(cbuffer, "Unknown %d", (*it));
         }
-    #else
-        for(std::vector<int>::iterator it = ports.begin(); it != ports.end(); ++it) {
-            sprintf_s(cbuffer, 10, "COM%d", (*it)+1);
-            portsNames.push_back( QString( cbuffer ) );
-        }
-    #endif
+        portsNames.push_back( QString( cbuffer ) );
+    }
+#else
+    ERROR UNDEFINED SYSTEM
+#endif
 
     return portsNames;
 }
