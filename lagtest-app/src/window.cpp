@@ -20,18 +20,17 @@
 #include <QPainter>
 #include <QFont>
 
-//Window::Window(enum drawingType drawing, TimeModel *tm, RingBuffer<screenFlip> *screenFlips)
 Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     showPlot(false) , isRunning(false)
 {
     qDebug("Creating main window ...");
     QWidget* flipWindow;
 	enum drawingType drawing = Window::QPAINT;
-    setWindowTitle("Lagtest - How fast is your display");
+    setWindowTitle("Lagtest - How slow is your display?");
     this->resize(640, 480);
 
     QVBoxLayout *layout = new QVBoxLayout;
-    this->msg = new QLabel("Put the light sensor ontop of the white area. When ready press the space bar.");
+    this->msg = new QLabel("Put the light sensor on the black area, then press the space bar.");
     this->latency = new QLabel("");
 
     msg->setAlignment(Qt::AlignHCenter);
@@ -69,25 +68,25 @@ QMenuBar* Window::createMenu()
     QMenuBar* menuBar = new QMenuBar;
 
     QMenu* fileMenu = new QMenu(tr("&File"), this);
-    QAction* writeProtocolAction = fileMenu->addAction(tr("&Create Report"));
+    QAction* writeReportAction = fileMenu->addAction(tr("create &Report"));
     QAction* exitAction = fileMenu->addAction(tr("E&xit"));
     menuBar->addMenu(fileMenu);
 
     QMenu* optionsMenu = new QMenu(tr("&Options"), this);
-    QAction* selectPortAction = optionsMenu->addAction(tr("Select &Port"));
-    QAction* flashAction = optionsMenu->addAction(tr("Fl&ash Arduino"));
-    QAction* plotAction = optionsMenu->addAction(tr("Show &graph"));
-    QAction* showLogAction = optionsMenu->addAction(tr("Show &Logs"));
+    QAction* selectPortAction = optionsMenu->addAction(tr("select &Port"));
+    QAction* flashAction = optionsMenu->addAction(tr("upload new &Firmware to Arduino"));
+    QAction* plotAction = optionsMenu->addAction(tr("show &Graph"));
+    QAction* showLogAction = optionsMenu->addAction(tr("show debug &Log"));
     menuBar->addMenu(optionsMenu);
 
     QMenu* helpMenu = new QMenu(tr("&Help"), this);
-    QAction* helpPageAction = helpMenu->addAction(tr("Goto &Introduction Page"));
+    QAction* helpPageAction = helpMenu->addAction(tr("open &Help webpage"));
     QAction* aboutAction = helpMenu->addAction(tr("&About"));
     menuBar->addMenu(helpMenu);
 
     connect(exitAction, SIGNAL(triggered()), this, SLOT(quit()));
     connect(flashAction, SIGNAL(triggered()), this, SIGNAL(flashArduino()));
-    connect(writeProtocolAction, SIGNAL(triggered()), this, SIGNAL(generateReport()));
+    connect(writeReportAction, SIGNAL(triggered()), this, SIGNAL(generateReport()));
     connect(helpPageAction, SIGNAL(triggered()), this, SLOT(recvOpenHelpPage()));
     connect(plotAction, SIGNAL(triggered()), this, SLOT(rcvTogglePlot()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT( rcvShowAbout()) );
@@ -195,7 +194,7 @@ void Window::createPlots()
 }
 
 void Window::keyPressEvent(QKeyEvent *event)
-{   
+{
     //qDebug("Pressed key %c", event->key() );
 
     switch (event->key()) {
@@ -248,11 +247,12 @@ void Window::recvStopMeasurement()
 void Window::rcvShowAbout()
 {
     QString text;
-    text += tr("Lagtest is designed by Strawlab <br>at the Research Institute of Molecular Pathology in Vienna<br><br>");
-    text += tr("For more information go to <a href='http://lagtest.org'>lagtest.org</a><br><br>");
-    text += tr("You are running lagtest version %1<br>").arg(QCoreApplication::applicationVersion());
+    text += tr("<h2>Lagtest version %1</h2>").arg(QCoreApplication::applicationVersion());
+    text += tr("Written by:");
+    text += tr("<ul><li>Manuel Pasieka, Campus Support Facilities, Vienna</li>");
+    text += tr(" <li>Andrew D. Straw, Research Institute of Molecular Pathology (IMP), Vienna<br></li></ul>");
+    text += tr("For more information, see <a href='http://lagtest.org'>lagtest.org</a><br><br>");
 
-    //QMessageBox::about(this, tr("Lagtest - How slow is your display?"), text );
     QMessageBox b(QMessageBox::NoIcon, tr("Lagtest - How slow is your display?"), text, QMessageBox::NoButton, this, Qt::Dialog );
     b.setTextFormat(Qt::RichText);
     b.exec();
@@ -272,7 +272,7 @@ void Window::rcvTogglePlot()
 
 void Window::receiveInvalidLatency()
 {
-    this->msg->setText( "Invalid Latency. Adjust the position of the light sensor to be ontop of the blinking area." );
+    this->msg->setText( "Invalid Latency. Adjust the position of the light sensor to be on the blinking area." );
     this->latency->clear();
 
     this->vLine[WHITE_TO_BLACK]->hide();
@@ -336,7 +336,8 @@ void Window::receiveLatencyUpdate(LatencyModel* lm)
 
 
 void Window::recvOpenHelpPage(){
-    QDesktopServices::openUrl(QUrl("http://lagtest.org/app-help", QUrl::TolerantMode));
+    QString url = tr("http://lagtest.org/app-help/%1").arg(QCoreApplication::applicationVersion());
+    QDesktopServices::openUrl(QUrl(url, QUrl::TolerantMode));
 }
 
 void Window::quit(){
@@ -394,7 +395,7 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
 
 void flashingBGQPaint::receiveStart(){
     qDebug("Start screen blinking ...");
-    this->timer->start();    
+    this->timer->start();
 }
 
 void flashingBGQPaint::receiveStop(){

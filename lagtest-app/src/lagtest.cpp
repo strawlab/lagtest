@@ -215,14 +215,14 @@ void LagTest::generateReport()
     qDebug("Report: \n%s", text.toStdString().c_str());
 
 
-    QString fileName = QFileDialog::getSaveFileName(0, tr("Save Protocol"), "LagTestProtocol", tr("Text File (*.txt)"));
+    QString fileName = QFileDialog::getSaveFileName(0, tr("Save Report"), "LagTestReport", tr("Text File (*.txt)"));
 
     QFile f(fileName);
     if( f.open( QIODevice::WriteOnly | QIODevice::Text ) )
     {
         f.write( text.toLocal8Bit() );
     } else {
-        QMessageBox::warning(0, tr("Write Error"), tr("Writing Protocol failed!") , QMessageBox::Ok, QMessageBox::NoButton);        
+        QMessageBox::warning(0, tr("Write Error"), tr("Writing Report failed!") , QMessageBox::Ok, QMessageBox::NoButton);
     }
     f.close();
 }
