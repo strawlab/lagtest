@@ -143,7 +143,7 @@ void Window::createPlots()
         c.setAlpha( 100 );
         colorObj.push_back( c );
     }
-    qDebug("nColors %d", nColors);
+    //qDebug("nColors %d", nColors);
 
     QPen p;
 
@@ -401,12 +401,12 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
 }
 
 void flashingBGQPaint::receiveStart(){
-    qDebug("Starting flasher ...");
+    qDebug("Start screen blinking ...");
     this->timer->start();    
 }
 
 void flashingBGQPaint::receiveStop(){
-    qDebug("Stoping flasher ...");
+    qDebug("Stop screen blinking ...");
     this->timer->stop();
     this->drawWhiteBG = false;
     emit update();

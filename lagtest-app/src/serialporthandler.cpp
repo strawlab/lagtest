@@ -59,8 +59,12 @@ void SerialPortHandler::createSerialPortCommunicator()
         connect(serial, SIGNAL(sendErrorMsg(QString)), this, SIGNAL(sendErrorMsg(QString)) );
         connect(serial, SIGNAL(sendFirmwareVersion(int)), this, SIGNAL(sendFirmwareVersion(int)) );
         connect(serial, SIGNAL(sendArduinoTimeout()), this, SIGNAL(sendArduinoTimeout()) );
+        connect(serial, SIGNAL(sendArduinoDetectionFailed()), this, SIGNAL(sendArduinoDetectionFailed()) );
 
-
+        //This is not working, dont know why, cant get signal through to the slot
+//        connect(this, SIGNAL(sendVersionCheck()), serial, SLOT(doVersionCheck()) );
+//        connect(this, SIGNAL(sendVersionCheck()), serial, SLOT(doSomethingElse()) );
+//        connect(this, SIGNAL(sendVersionCheck()), qApp, SLOT(aboutQt()));
 
     } catch (exception &e){
         //qCritical("Connecting to the lagtest serial board failed!");
@@ -89,6 +93,14 @@ void SerialPortHandler::onThreadQuit()
     }
 }
 
+void SerialPortHandler::doVersionCheck()
+{
+    //BUG: emited signal want get to slot
+    //emit sendVersionCheck();
+
+    this->serial->doVersionCheck();
+}
+
 void SerialPortHandler::start()
 {
     if(this->thread){
@@ -99,6 +111,8 @@ void SerialPortHandler::start()
 }
 
 void SerialPortHandler::stop(){
+
+    //sendDebugMsg("SerialPort Handler: Received signal to stop serial loop");
     this->serial->recvStop();
     this->timer->stop();
     this->thread->terminate();
@@ -113,7 +127,8 @@ LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeMode
     clock_storage(clock_storage),
     adc_storage(adc_storage),
     sendRequest(false),
-    baudRate(baudRate)
+    baudRate(baudRate),
+    stopThread(false)
 {
     this->portN = this->getPortIdx(port);
     if( portN < 0)
@@ -186,6 +201,7 @@ int  LagTestSerialPortComm::read(unsigned char* buffer, int max_size){
 
 void LagTestSerialPortComm::recvStop()
 {
+    //sendDebugMsg("LagTestSerialPortComm: Received signal to stop serial loop");
     this->stopThread = true;
 }
 
@@ -208,11 +224,11 @@ void LagTestSerialPortComm::startCommunication()
 
     sendDebugMsg("Starting Arduino Serial communication ...");
 
+    this->doVersionCheck();
     this->init();
 
     try{
-        this->initSerialPort();
-        mySleep( 10 ) ;
+        this->initSerialPort();        
     } catch( ... ) {
         this->sendErrorMsg("Opening Serial Port failed!");
         emit finished();
@@ -227,10 +243,6 @@ void LagTestSerialPortComm::startCommunication()
         {
             this->sendArduinoTimeRequest();
             this->sendRequest = false;
-        }
-
-        if( frameCnter == 10 ){
-            this->sendArduinoVersionRequest();
         }
 
         validFrame = this->getNextFrame( frame, now );
@@ -275,11 +287,11 @@ void LagTestSerialPortComm::startCommunication()
                     break;
                 }
 
-                case 'V':   //Version Response
-                {
-                    emit sendFirmwareVersion( frame.value );
-                    break;
-                }
+//                case 'V':   //Version Response
+//                {
+//                    emit sendFirmwareVersion( frame.value );
+//                    break;
+//                }
 
                 default:{
                     //qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
@@ -292,6 +304,69 @@ void LagTestSerialPortComm::startCommunication()
     }
 
     sendDebugMsg("Stoping Arduino Serial communication ...");
+    this->closeSerialPort();  
+}
+
+void LagTestSerialPortComm::doVersionCheck()
+{
+    bool gotVersionReply;
+    bool validFrame;
+    int garbageCnt;
+    timed_sample_t frame;
+    double now;
+
+    //throw exception();
+    sendDebugMsg("Starting Arduino Version Check ...");
+
+//    if( this->thread() )
+//    {
+//        sendErrorMsg("Cant run Version check. Main Communication thread is still running!");
+//        return;
+//    }
+
+    this->init();
+
+    try{
+        this->initSerialPort();
+    } catch( ... ) {
+        this->sendErrorMsg("Opening Serial Port failed!");
+        emit finished();
+    }
+
+    garbageCnt = 0;
+    gotVersionReply = false;
+    while( (!gotVersionReply) && (garbageCnt < 100) )
+    {
+        this->sendArduinoVersionRequest();
+        validFrame = this->getNextFrame( frame, now );
+
+        if( validFrame )
+        {
+            switch(frame.cmd)
+            {
+                case 'V':   //Version Response
+                {
+                    if( !gotVersionReply )
+                    {
+                        emit sendFirmwareVersion( frame.value );
+                        gotVersionReply = true;
+                    }
+                    break;
+                }
+                default:{
+                    garbageCnt++;
+                }
+            }
+        } else {
+            garbageCnt++;
+        }
+    }
+
+    if( !gotVersionReply ){
+        emit sendArduinoDetectionFailed();
+    }
+
+    sendDebugMsg( "Finished version check" );
     this->closeSerialPort();
 }
 
@@ -323,7 +398,7 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
     int nReadBytes = 0;
     int t;
     //Read from the serial port at least one complete message
-    while( (nReadBytes < frameLength) && (nEmptyReads < 2000) )
+    while( (nReadBytes < frameLength) && (nEmptyReads < 400) )
     {
         t = this->read(&(buffer[nReadBytes]), (bufferSize-nReadBytes) );
         nReadBytes += t;
@@ -335,7 +410,7 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
         }
     }
 
-    if( nEmptyReads >= 2000 ){
+    if( nEmptyReads >= 400 ){
         emit sendArduinoTimeout();
         return 0;
     }

@@ -25,6 +25,7 @@ public:
 
 signals:
     void stopMeasurement();
+    void sendFirmwareVersionCheck();
 
 public slots:    
     void recvVersionCheckFinished(QNetworkReply*reply);
@@ -37,6 +38,7 @@ public slots:
     void recvSerialError(QString msg);
     void recvArduinoTimeout();
     void recvArduinoFirmwareVersion(int version);
+    void recvArduinoDetectionError();
 
 protected:
     QString getOS();

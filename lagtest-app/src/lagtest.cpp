@@ -56,8 +56,9 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 
     QObject::connect( w, SIGNAL(doReset()), lm, SLOT(reset()) );
     QObject::connect( w, SIGNAL(startMeasurement()), serial, SLOT(start()) );
+    QObject::connect( w, SIGNAL(stopMeasurement()), serial, SLOT(stop()) );
     QObject::connect( w, SIGNAL(startMeasurement()), lm, SLOT(start()) );
-    QObject::connect( w, SIGNAL(stopMeasurement()), lm, SLOT(stop()) );
+    QObject::connect( w, SIGNAL(stopMeasurement()), lm, SLOT(stop()) );    
     QObject::connect( w, SIGNAL(startMeasurement()), tm, SLOT(start()) );
     QObject::connect( w, SIGNAL(generateReport()), this, SLOT( generateReport() ) );
     QObject::connect( w, SIGNAL(flashArduino()), this, SLOT( recvFlashArduino() ) );
@@ -78,12 +79,15 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( serial, SIGNAL(sendErrorMsg(QString)),    this, SLOT(recvSerialError(QString)) );
     QObject::connect( serial, SIGNAL(sendArduinoTimeout()),     this, SLOT(recvArduinoTimeout()) );
     QObject::connect( serial, SIGNAL(sendFirmwareVersion(int)), this, SLOT(recvArduinoFirmwareVersion(int)) );
+    QObject::connect( serial, SIGNAL(sendArduinoDetectionFailed()), this, SLOT(recvArduinoDetectionError()) );
 
     QObject::connect( this, SIGNAL(stopMeasurement()), serial, SLOT( stop()) );
+    QObject::connect( this, SIGNAL(sendFirmwareVersionCheck()), serial, SLOT(doVersionCheck()) );
     QObject::connect( this, SIGNAL(stopMeasurement()), lm, SLOT( stop()) );
     QObject::connect( this, SIGNAL(stopMeasurement()), w, SLOT( recvStopMeasurement()) );
 
     w->show();
+    emit sendFirmwareVersionCheck();
 }
 
 LagTest::~LagTest()
@@ -154,13 +158,20 @@ void LagTest::recvArduinoTimeout()
     b.exec();
 }
 
+void LagTest::recvArduinoDetectionError()
+{
+    emit stopMeasurement();
+    QMessageBox b(QMessageBox::Warning,  "Arduino Error", "Unable to detect Arduino!", QMessageBox::Ok );
+    b.exec();
+}
+
 void LagTest::recvArduinoFirmwareVersion(int version)
 {
     int fVersion = this->property("ArudinoFirmwareVersion").toInt();
     if( version != fVersion )
     {
 
-        QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Invalid Arduino Firmware",
+        QMessageBox *box = new QMessageBox(QMessageBox::NoIcon, "Wrong Arduino Firmware",
                      tr("Invalid Arduino Firmware\nExpected %1 , Instead of %2").arg(fVersion).arg(version),
                      QMessageBox::Ignore | QMessageBox::Ok);
         box->button(QMessageBox::Ok)->setText("Flash Arduino");
@@ -261,9 +272,7 @@ QString LagTest::getOS()
 
 void LagTest::recvFlashArduino()
 {
-    //qDebug("Current path %s" , QCoreApplication::applicationDirPath().toStdString().c_str() );
-    //programArduino( QCoreApplication::applicationDirPath().append("/tools/avrdude.exe"), QCoreApplication::applicationDirPath().append("/firmware.hex"), this->settings->value("Arduino/Port").toString());
-
+    //qDebug("Current path %s" , QCoreApplication::applicationDirPath().toStdString().c_str() );    
     emit stopMeasurement();
 
     programArduino( settings->value("Arduino/avrDudePath").toString() ,
@@ -324,10 +333,10 @@ std::vector<QString> LagTest::discoverComPorts()
     qDebug("Discovering Serial Ports ...");
 
     for(int i = 0; i < 29; i++){
-        qDebug("Trying %d",i);
+        //qDebug("Trying %d",i);
         if( !RS232_OpenComport(i, 9600) ){
             ports.push_back(i);
-            qDebug("  port %d worked",i);
+            //qDebug("  port %d worked",i);
             RS232_CloseComport( i );
         }
     }

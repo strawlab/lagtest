@@ -19,12 +19,14 @@ signals:
     void sendErrorMsg(QString msg);
     void sendArduinoTimeout();
     void sendFirmwareVersion(int version);
+    void sendArduinoDetectionFailed();
+    void sendVersionCheck();
 
 public slots:
     void onThreadQuit();
     void start();
     void stop();
-
+    void doVersionCheck();
 
 private:
     QTimer* timer;
@@ -69,18 +71,20 @@ signals:
     void sendErrorMsg(QString msg);
     void sendArduinoTimeout();
     void sendFirmwareVersion(int version);
+    void sendArduinoDetectionFailed();
+    void sendCheckFirmwareVersion();
 
 public slots:
     void startCommunication();
     void sendClockRequest();
-    void recvStop();
+    void recvStop();    
+    void doVersionCheck();
 
 private:
     void init();
     bool decode2Frame(uint8_t *buffer, timed_sample_t* frame);
     void closeSerialPort();
-    void initSerialPort();
-    bool doVersionCheck();
+    void initSerialPort();    
     void sendArduinoTimeRequest();
     void sendArduinoVersionRequest();
     int readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize);
