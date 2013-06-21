@@ -364,8 +364,7 @@ QString LagTest::makeUserSelectPort()
 
     std::vector<QString> ports = discoverComPorts();
     for(std::vector<QString>::iterator it = ports.begin(); it != ports.end(); ++it) {
-        qDebug("Found Port %s" , (*it).toStdString().c_str() );
-        //items << (*it).toStdString().c_str();
+        qDebug("Found Port %s" , (*it).toStdString().c_str() );        
         items << (*it);
     }
 
@@ -397,7 +396,15 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
         port = makeUserSelectPort();
     }
 
+#ifdef Q_OS_WIN
     sprintf(buffer, "-F -v -pm328p -c arduino -b 115200 -P\\\\.\\%s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
+#elif defined( Q_OS_LINUX )
+    qCritical("Linux implementation missing!");
+    return -1;
+#else
+    ERROR UNDEFINED SYSTEM
+#endif
+
 
     QString param(QString::fromLocal8Bit(buffer));
     qDebug("Calling %s with %s" , avrDudePath.toStdString().c_str(), param.toStdString().c_str() );

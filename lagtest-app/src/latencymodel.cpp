@@ -28,7 +28,7 @@ void LatencyModel::start()
     QTimer* t = new QTimer();
     t->setSingleShot(true);
     connect(t, SIGNAL(timeout()), this, SLOT( realStart()) );
-    t->start(2000); //start one second later
+    t->start(2000); //start two seconds later
 }
 
 void LatencyModel::realStart()

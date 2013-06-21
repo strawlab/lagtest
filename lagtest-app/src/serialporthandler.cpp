@@ -312,7 +312,6 @@ void LagTestSerialPortComm::doVersionCheck()
     timed_sample_t frame;
     double now;
 
-    //throw exception();
     sendDebugMsg("Starting Arduino Version Check ...");
 
     this->init();
@@ -461,10 +460,8 @@ bool LagTestSerialPortComm::decode2Frame(uint8_t* buffer, timed_sample_t* frame)
 {
     //Check if the checksum is valid and if so, fill the data structure
     uint8_t cs;
-    cs = *(buffer+1)+ *(buffer+2)+ *(buffer+3)+ *(buffer+4)+ *(buffer+5) + *(buffer+6) + *(buffer+7);;
-//    for(int i=0; i < 6; i++){
-//        cs += *(buffer+1 + i);
-//    }
+    cs = *(buffer+1)+ *(buffer+2)+ *(buffer+3)+ *(buffer+4)+ *(buffer+5) + *(buffer+6) + *(buffer+7);
+
     if( cs == *(buffer+8))
     {
         frame->cmd =    *(buffer+0);

@@ -122,14 +122,6 @@ void Window::createPlots()
     cPlots[WHITE_TO_BLACK]->setAxisTitle( QwtPlot::xBottom, "Latency [ms]" );
     //cPlots[WHITE_TO_BLACK]->setFooter( "Latency [ms]" );
 
-    //QwtLegend* l = new QwtLegend();
-    //QwtLegend* l2 = new QwtLegend();
-    //l->setWindowTitle( "ADC" );
-    //l2->setWindowTitle( "ADC" );
-    //cPlots[BLACK_TO_WHITE]->insertLegend( l );
-    //cPlots[WHITE_TO_BLACK]->insertLegend( l2 );
-
-
     updateCurveIdx[BLACK_TO_WHITE] = 0;
     updateCurveIdx[WHITE_TO_BLACK] = 0;
 
