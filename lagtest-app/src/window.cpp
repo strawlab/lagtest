@@ -253,6 +253,12 @@ void Window::rcvShowAbout()
     text += tr(" <li>Andrew D. Straw, Research Institute of Molecular Pathology (IMP), Vienna<br></li></ul>");
     text += tr("For more information, see <a href='http://lagtest.org'>lagtest.org</a><br><br>");
 
+    text += tr("The source code written by the lagtest authors is licensed under the ");
+    text += tr("MIT license. The application also includes ");
+    text += tr("<a href='http://www.teuniz.net/RS-232/'>RS-232</a>, ");
+    text += tr("which is GPL-2 licensed. Therefore, the compiled binary is ");
+    text += tr("available under the GPL-2 license. ");
+
     QMessageBox b(QMessageBox::NoIcon, tr("Lagtest - How slow is your display?"), text, QMessageBox::NoButton, this, Qt::Dialog );
     b.setTextFormat(Qt::RichText);
     b.exec();
