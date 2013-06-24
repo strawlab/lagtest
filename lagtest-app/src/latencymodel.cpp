@@ -90,7 +90,7 @@ void LatencyModel::update()
 {
     double latency;
 
-    //qDebug("Latency Update IN @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
+    qDebug("Latency Update IN @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
 
     //Read all new clock pairs and use them to update the time model
     clockPair cp;
@@ -129,7 +129,7 @@ void LatencyModel::update()
         emit signalUpdate(this);
     }
 
-    //qDebug("Latency Update OUT @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
+    qDebug("Latency Update OUT @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
 }
 
 void LatencyModel::addLatency(double newLatency)
@@ -332,7 +332,7 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
         //last entry in the ringbuffer is the sample closest in time to the screen flip
         if( this->tm->toLocalTime(s) > sf.local ){
             found = true;
-            //qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s), this->adc->unread() );
+            qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s), this->adc->unread() );
         }
     }
 

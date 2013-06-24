@@ -12,20 +12,6 @@
     ERROR UNDEFINED SYSTEM
 #endif
 
-void mySleep(int sleepMs)
-{
-  // From http://stackoverflow.com/questions/10918206/cross-platform-sleep-function-for-c
-
-#ifdef Q_OS_WIN
-    Sleep(sleepMs);
-#elif defined( Q_OS_LINUX )
-    usleep(sleepMs * 1000);   // usleep takes sleep time in us
-#else
-    ERROR UNDEFINED SYSTEM
-#endif
-}
-
-
 
 SerialPortHandler::SerialPortHandler(QString port, int requestPeriod, TimeModel *tm, RingBuffer<clockPair> *clock_storage, RingBuffer<adcMeasurement> *adc_storage) :
     QObject(0),
@@ -193,6 +179,42 @@ void LagTestSerialPortComm::initSerialPort()
     }
 }
 
+
+bool LagTestSerialPortComm::blockingRead(unsigned char* data, int size, int maxTimeout)
+{
+	int nBytes, t;
+	double endTime;
+
+#ifdef Q_OS_LINUX
+    struct timespec tw, tremain;
+	tw.tv_sec = 0;
+	tw.tv_nsec = 10 * 1000 * 1000;
+#endif
+
+	endTime = this->tm->getCurrentTime() + maxTimeout*1000.0;
+	nBytes = 0;
+
+	while( (nBytes < size) && (endTime < this->tm->getCurrentTime() ) )
+	{
+		t = this->read(&(data[nBytes]), (size-nBytes) );
+		nBytes += t;
+		if(t == 0){
+			#ifdef Q_OS_WIN
+				Sleep( 10.0 );
+			#elif defined( Q_OS_LINUX )
+				nanosleep( &tw , &tremain);
+			#else
+				ERROR UNDEFINED SYSTEM
+			#endif
+		}
+	}
+	if( nBytes < size ){
+		return false;
+	} else {
+		return true;
+	}
+}
+
 int LagTestSerialPortComm::write(unsigned char* data, int size){
     return RS232_SendBuf(this->portN, data, size);
 }
@@ -230,7 +252,11 @@ void LagTestSerialPortComm::startCommunication()
     this->init();
 
     try{
-        this->initSerialPort();        
+        this->initSerialPort();
+        unsigned char buffer[100];
+        if( this->blockingRead(buffer, 10, 2000) == false ) {
+        	this->sendDebugMsg("Init read failed!");
+        }
     } catch( ... ) {
         this->sendErrorMsg("Opening Serial Port failed!");
         emit finished();
@@ -392,20 +418,36 @@ int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength,
     int nEmptyReads = 0;
     int nReadBytes = 0;
     int t;
+
+#ifdef Q_OS_LINUX
+    struct timespec tw, tremain;
+	tw.tv_sec = 0;
+	tw.tv_nsec = 10 * 1000 * 1000;
+#endif
+
+
     //Read from the serial port at least one complete message
-    while( (nReadBytes < frameLength) && (nEmptyReads < 400) )
+    while( (nReadBytes < frameLength) && (nEmptyReads < 200) )
     {
         t = this->read(&(buffer[nReadBytes]), (bufferSize-nReadBytes) );
         nReadBytes += t;
         if(t == 0){
             nEmptyReads ++;
-            mySleep( 5 ) ;
+
+		#ifdef Q_OS_WIN
+			Sleep( 10.0 );
+		#elif defined( Q_OS_LINUX )
+			nanosleep( &tw , &tremain);
+		#else
+			ERROR UNDEFINED SYSTEM
+		#endif
+
         } else {
             nEmptyReads = 0;
         }
     }
 
-    if( nEmptyReads >= 400 ){
+    if( nEmptyReads >= 200 ){
         throw ReadErrorException();
     }
 

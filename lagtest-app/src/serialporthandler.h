@@ -92,6 +92,7 @@ private:
     void sendArduinoVersionRequest();
     int readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize);
     void getNextFrame(timed_sample_t& frame , double &timeRead);
+    bool blockingRead(unsigned char* data, int size, int maxTimeout);
 
     bool stopThread;
 
