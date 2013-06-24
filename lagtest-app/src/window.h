@@ -76,6 +76,7 @@ protected:
     RingBuffer<screenFlip> *store;
 
 signals:
+    void setLed(bool turnOn);
 
 public slots:
     void flipColor();
@@ -100,6 +101,7 @@ signals:
     void showLogWindow();
     void selectPort();
     void stop();
+    void setLed(bool turnOn);
 
 public slots:
     void recvStartMeasurement();

@@ -185,18 +185,12 @@ void loop() {
 
             SREG = SaveSREG_; // restore interrupt flags
 
-            if (value%2) {
-                digitalWrite(LEDPin,HIGH); // turn LED on
-            } else {
-                digitalWrite(LEDPin,LOW); // turn LED off
-            }
-
             send_data(timestamp_request,'P');
         } else if (cmd=='V') {
 
             static timed_sample_t version_request;
 
-            version_request.value = 3;
+            version_request.value = 4;
 
             uint8_t SaveSREG_ = SREG;   // save interrupt flag
             cli(); // disable interrupts

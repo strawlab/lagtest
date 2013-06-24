@@ -49,6 +49,7 @@ void SerialPortHandler::createSerialPortCommunicator()
         connect(serial, SIGNAL(sendArduinoTimeout()), this, SIGNAL(sendArduinoTimeout()) );
         connect(serial, SIGNAL(sendArduinoDetectionFailed()), this, SIGNAL(sendArduinoDetectionFailed()) );
 
+        connect(this, SIGNAL(setLed(bool)), serial, SLOT(onLedSet(bool)) );
         //This is not working, dont know why, cant get signal through to the slot
 //        connect(this, SIGNAL(sendVersionCheck()), serial, SLOT(doVersionCheck()) );
 //        connect(this, SIGNAL(sendVersionCheck()), serial, SLOT(doSomethingElse()) );
@@ -116,7 +117,8 @@ LagTestSerialPortComm::LagTestSerialPortComm(QString port, int baudRate,TimeMode
     adc_storage(adc_storage),
     sendRequest(false),
     baudRate(baudRate),
-    stopThread(false)
+    stopThread(false),
+    setLedState(0)
 {
     this->portN = this->getPortIdx(port);
     if( portN < 0)
@@ -191,16 +193,16 @@ bool LagTestSerialPortComm::blockingRead(unsigned char* data, int size, int maxT
 	tw.tv_nsec = 10 * 1000 * 1000;
 #endif
 
-	endTime = this->tm->getCurrentTime() + maxTimeout*1000.0;
+    endTime = this->tm->getCurrentTime() + maxTimeout*1000000.0;
 	nBytes = 0;
 
-	while( (nBytes < size) && (endTime < this->tm->getCurrentTime() ) )
+    while( (nBytes < size) && (endTime > this->tm->getCurrentTime() ) )
 	{
 		t = this->read(&(data[nBytes]), (size-nBytes) );
 		nBytes += t;
 		if(t == 0){
 			#ifdef Q_OS_WIN
-				Sleep( 10.0 );
+                Sleep( 10.0 );
 			#elif defined( Q_OS_LINUX )
 				nanosleep( &tw , &tremain);
 			#else
@@ -208,6 +210,7 @@ bool LagTestSerialPortComm::blockingRead(unsigned char* data, int size, int maxT
 			#endif
 		}
 	}
+
 	if( nBytes < size ){
 		return false;
 	} else {
@@ -235,6 +238,14 @@ void LagTestSerialPortComm::sendClockRequest()
     this->sendRequest = true;
 }
 
+void LagTestSerialPortComm::onLedSet( bool ledOn )
+{
+    if( ledOn )
+        this->setLedState = LED_ON;
+    else
+        this->setLedState = LED_OFF;
+}
+
 void LagTestSerialPortComm::startCommunication()
 {   
     clockPair cp;
@@ -243,6 +254,12 @@ void LagTestSerialPortComm::startCommunication()
     bool validFrame = false;    
     double sendTime, now, d1;
     int frameCnter = 0;
+
+#ifdef Q_OS_LINUX
+    struct timespec tw, tremain;
+    tw.tv_sec = 0;
+    tw.tv_nsec = 1 * 1000 * 1000;
+#endif
 
     this->stopThread = false;
 
@@ -254,7 +271,7 @@ void LagTestSerialPortComm::startCommunication()
     try{
         this->initSerialPort();
         unsigned char buffer[100];
-        if( this->blockingRead(buffer, 10, 2000) == false ) {
+        if( this->blockingRead(buffer, 9, 2000) == false ) {
         	this->sendDebugMsg("Init read failed!");
         }
     } catch( ... ) {
@@ -272,59 +289,84 @@ void LagTestSerialPortComm::startCommunication()
             this->sendArduinoTimeRequest();
             this->sendRequest = false;
         }
+        if( this->setLedState != INACTIVE)
+        {
+            QString s;
 
+            if(setLedState == LED_ON){
+                this->sendErrorMsg(s.sprintf("Led ON %g", this->tm->getCurrentTime() ));
+                this->sendArduinoLedState(true);
+            } else {
+                this->sendErrorMsg(s.sprintf("Led OFF %g", this->tm->getCurrentTime() ));
+                this->sendArduinoLedState(false);
+            }
+            setLedState = INACTIVE;
+        }
         try
         {
-        	this->getNextFrame( frame, now );
-        	frameCnter++;
+            if( this->getNextFrame( frame, now ) )
+            {
+                frameCnter++;
 
-			//qDebug( " Frame: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+                //qDebug( " Frame: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
 
-			switch(frame.cmd)
-			{
-				case 'H'://ADC measurement
-				{
-					adcM.adc = frame.value;
-					adcM.arduino_epoch = frame.epoch;
-					adcM.arduino_ticks = frame.ticks;
-					this->adc_storage->put( &adcM );
-					//qDebug("Received a adc measurement");
-					break;
-				}
-				case 'P': //Clock response
-				{
-				//Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
-					if( frame.value > this->ntimeRequests ){
-						//qCritical("Arduino returns invalid reference id!");
-						this->sendErrorMsg("Arduino returns invalid reference id!");
-					} else {
-						sendTime = this->timeRequests[ frame.value ];
-						d1 = (now - sendTime)/2.0;
-						if( d1 <= 0){
-							//qCritical("somethign strange happens here ... %g", d1 );
-							QString s;
-							this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
-							d1 = 0;
-						}
-						cp.local = sendTime + d1;
-						cp.arduino_epoch = frame.epoch;
-						cp.arduino_ticks = frame.ticks;
-						this->clock_storage->put( &cp );
-						//qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
-					}
-					break;
-				}
+                switch(frame.cmd)
+                {
+                    case 'H'://ADC measurement
+                    {
+                        adcM.adc = frame.value;
+                        adcM.arduino_epoch = frame.epoch;
+                        adcM.arduino_ticks = frame.ticks;
+                        this->adc_storage->put( &adcM );
+                        //qDebug("Received a adc measurement");
+                        break;
+                    }
+                    case 'P': //Clock response
+                    {
+                    //Get the time the request was send; assume the latency of receiving the reply is symetrical; store the time on this pc and the arduino clock
+                        if( frame.value > this->ntimeRequests ){
+                            //qCritical("Arduino returns invalid reference id!");
+                            this->sendErrorMsg("Arduino returns invalid reference id!");
+                        } else {
+                            sendTime = this->timeRequests[ frame.value ];
+                            d1 = (now - sendTime)/2.0;
+                            QString s;
+                            if( d1 <= 0){
+                                //qCritical("somethign strange happens here ... %g", d1 );
 
-				default:{
-					//qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
-					break;
-				}
-			}
+                                this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
+                                d1 = 0;
+                            } else if ( d1 > 15000000 ){
+                                sendErrorMsg( s.sprintf("Too high clock diff %g ", d1) );
+                            }
+                            cp.local = sendTime + d1;
+                            cp.arduino_epoch = frame.epoch;
+                            cp.arduino_ticks = frame.ticks;
+                            this->clock_storage->put( &cp );
+                            //qDebug("Received a arduino clock msg for request %d from %g", frame.value, cp.local );
+                        }
+                        break;
+                    }
+
+                    default:{
+                        //qDebug( "Unknown msg from arduino: %c;%d;%d;%d", frame.cmd, frame.value, frame.epoch, frame.ticks );
+                        break;
+                    }
+                }
+            } else {
+                #ifdef Q_OS_WIN
+                    Sleep( 1.0 );
+                #elif defined( Q_OS_LINUX )
+                    nanosleep( &tw , &tremain);
+                #else
+                    ERROR UNDEFINED SYSTEM
+                #endif
+            }
         } catch ( InvalidFrameException ){
         	//Nothing special here, invalid frames can happen, specially at the beginning
         } catch ( ReadErrorException ) {
         	emit sendArduinoTimeout();
-        }
+        }        
     }
 
     sendDebugMsg("Stoping Arduino Serial communication ...");
@@ -338,12 +380,22 @@ void LagTestSerialPortComm::doVersionCheck()
     timed_sample_t frame;
     double now;
 
+#ifdef Q_OS_LINUX
+    struct timespec tw, tremain;
+    tw.tv_sec = 0;
+    tw.tv_nsec = 1 * 1000 * 1000;
+#endif
+
     sendDebugMsg("Starting Arduino Version Check ...");
 
     this->init();
 
     try{
         this->initSerialPort();
+        unsigned char buffer[20];
+        if( this->blockingRead(buffer, 9, 2000) == false ) {
+            this->sendDebugMsg("Init read failed 2!");
+        }
     } catch( ... ) {
         this->sendErrorMsg("Opening Serial Port failed!");
         emit finished();
@@ -357,19 +409,28 @@ void LagTestSerialPortComm::doVersionCheck()
 
         try
         {
-        	this->getNextFrame( frame, now );
-
-        	switch(frame.cmd)
+            if( this->getNextFrame( frame, now ) )
             {
-                case 'V':   //Version Response
+                switch(frame.cmd)
                 {
-					gotVersionReply = true;
-                    break;
+                    case 'V':   //Version Response
+                    {
+                        gotVersionReply = true;
+                        break;
+                    }
+                    default:{
+                        garbageCnt++;
+                        break;
+                    }
                 }
-                default:{
-                    garbageCnt++;
-                    break;
-                }
+            } else {
+                #ifdef Q_OS_WIN
+                    Sleep( 1.0 );
+                #elif defined( Q_OS_LINUX )
+                    nanosleep( &tw , &tremain);
+                #else
+                    ERROR UNDEFINED SYSTEM
+                #endif
             }
         } catch ( InvalidFrameException ){
         	garbageCnt++;
@@ -378,7 +439,7 @@ void LagTestSerialPortComm::doVersionCheck()
 			this->closeSerialPort();
 			emit sendArduinoTimeout();
 			return;
-        }
+        }        
     }
 
     sendDebugMsg( "Finished version check" );
@@ -389,6 +450,15 @@ void LagTestSerialPortComm::doVersionCheck()
     } else {
         emit sendFirmwareVersion( frame.value );
     }
+}
+
+void LagTestSerialPortComm::sendArduinoLedState(bool ledOn)
+{
+    unsigned char b[2];
+    b[0] = 'L';
+    b[1] = (ledOn ? 1 : 0);
+
+    this->write(b, 2);
 }
 
 void LagTestSerialPortComm::sendArduinoVersionRequest()
@@ -413,88 +483,67 @@ void LagTestSerialPortComm::sendArduinoTimeRequest()
     this->timeRequests[tR] = this->tm->getCurrentTime();
 }
 
-int LagTestSerialPortComm::readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize)
-{
-    int nEmptyReads = 0;
-    int nReadBytes = 0;
-    int t;
-
-#ifdef Q_OS_LINUX
-    struct timespec tw, tremain;
-	tw.tv_sec = 0;
-	tw.tv_nsec = 10 * 1000 * 1000;
-#endif
-
-
-    //Read from the serial port at least one complete message
-    while( (nReadBytes < frameLength) && (nEmptyReads < 200) )
-    {
-        t = this->read(&(buffer[nReadBytes]), (bufferSize-nReadBytes) );
-        nReadBytes += t;
-        if(t == 0){
-            nEmptyReads ++;
-
-		#ifdef Q_OS_WIN
-			Sleep( 10.0 );
-		#elif defined( Q_OS_LINUX )
-			nanosleep( &tw , &tremain);
-		#else
-			ERROR UNDEFINED SYSTEM
-		#endif
-
-        } else {
-            nEmptyReads = 0;
-        }
-    }
-
-    if( nEmptyReads >= 200 ){
-        throw ReadErrorException();
-    }
-
-    return nReadBytes;
-}
-
-
-void LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRead )
+bool LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRead )
 {
     const int frameLength = 9;
     const int bufferSize = 100;
     static uint8_t buffer[bufferSize];
     static int nBuffer = 0;
+    static int nEmptyReads;
     int i;
     bool validFrame;
+    int t;
 
-    nBuffer += this->readFrameFromSerial( &(buffer[nBuffer]), frameLength, bufferSize-nBuffer) ;
+    t = this->read(&(buffer[nBuffer]), bufferSize-nBuffer );
 
-    //Try to read a new frame from the beginning of the buffer
-    //If the frame checksum fails, do a frame shift and try again
-    validFrame = false;
-    i = 0;
-    //do frame shifts untill there cannot be a full frame in the buffer
-    while( !validFrame && (i+frameLength) <= nBuffer )
+    if( t == 0)
     {
-        validFrame = decode2Frame(&buffer[i], &frame);
+        nEmptyReads ++;
+        if( nEmptyReads > 200 ){
+            throw ReadErrorException();
+        }
 
-        if( validFrame ) {
-           timeRead = this->tm->getCurrentTime();
-           i += frameLength;
-        } else {
-            i++; //Shift the frame by one
+    } else {
+        nEmptyReads = 0;
+        nBuffer += t;
+
+        if( nBuffer >= frameLength )
+        {
+            //Try to read a new frame from the beginning of the buffer
+            //If the frame checksum fails, do a frame shift and try again
+            validFrame = false;
+            i = 0;
+            //do frame shifts untill there cannot be a full frame in the buffer
+            while( !validFrame && (i+frameLength) <= nBuffer )
+            {
+                validFrame = decode2Frame(&buffer[i], &frame);
+
+                if( validFrame ) {
+                   timeRead = this->tm->getCurrentTime();
+                   i += frameLength;
+                } else {
+                    i++; //Shift the frame by one
+                }
+            }
+            // i ... number of bytes read/garbage in buffer
+
+            //Move read/garbage data to the beginning of the buffer
+            assert ( i <= nBuffer );
+            for(int j = 0; j < (nBuffer-i) ; j++){
+                buffer[j] = buffer[j+i];
+            }
+            nBuffer -= i;
+            assert( nBuffer >= 0 );
+
+            if( !validFrame ){
+                throw InvalidFrameException();
+            }
+
+            return true;
         }
     }
-    // i ... number of bytes read/garbage in buffer
 
-    //Move read/garbage data to the beginning of the buffer
-    assert ( i <= nBuffer );
-    for(int j = 0; j < (nBuffer-i) ; j++){
-        buffer[j] = buffer[j+i];
-    }
-    nBuffer -= i;
-    assert( nBuffer >= 0 );
-
-    if( !validFrame ){
-    	throw InvalidFrameException();
-    }
+    return false; //No valid frame received
 }
 
 

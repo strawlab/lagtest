@@ -21,12 +21,13 @@ signals:
     void sendFirmwareVersion(int version);
     void sendArduinoDetectionFailed();
     void sendVersionCheck();
+    void setLed( bool ledOn );
 
 public slots:
     void onThreadQuit();
     void start();
     void stop();
-    void doVersionCheck();
+    void doVersionCheck();    
 
 private:
     QTimer* timer;
@@ -59,9 +60,11 @@ typedef struct {
 
 
 class LagTestSerialPortComm : public QObject
-{
+{    
     Q_OBJECT
 public:
+    enum ledState { INACTIVE = 0, LED_ON = 1, LED_OFF = 2 };
+
     explicit LagTestSerialPortComm(QString port, int baudRate, TimeModel* tm, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);
     static int getPortIdx(QString portName);
 
@@ -75,11 +78,12 @@ signals:
     void sendArduinoTimeout();
     void sendFirmwareVersion(int version);
     void sendArduinoDetectionFailed();
-    void sendCheckFirmwareVersion();
+    void sendCheckFirmwareVersion();    
 
 public slots:
     void startCommunication();
     void sendClockRequest();
+    void onLedSet(bool ledOn );
     void recvStop();    
     void doVersionCheck();
 
@@ -90,8 +94,8 @@ private:
     void initSerialPort();    
     void sendArduinoTimeRequest();
     void sendArduinoVersionRequest();
-    int readFrameFromSerial(uint8_t* buffer, int frameLength, int bufferSize);
-    void getNextFrame(timed_sample_t& frame , double &timeRead);
+    void sendArduinoLedState(bool ledOn);
+    bool getNextFrame(timed_sample_t& frame , double &timeRead);
     bool blockingRead(unsigned char* data, int size, int maxTimeout);
 
     bool stopThread;
@@ -105,7 +109,9 @@ private:
     RingBuffer<adcMeasurement>* adc_storage;
 
     //Needed for handling Arduino Clock requests
+    int setLedState;
     bool sendRequest;
+    bool dataAvailable;
     const static int ntimeRequests = 20;
     double timeRequests[ntimeRequests];
     unsigned int tR;

@@ -15,7 +15,7 @@ typedef struct{
     double local;
 } clockPair;
 
-enum flip_type { BLACK_TO_WHITE = 0, WHITE_TO_BLACK  = 1};
+enum flip_type { BLACK_TO_WHITE = 0, WHITE_TO_BLACK  = 1 };
 typedef struct{
     double local;
     enum flip_type type;

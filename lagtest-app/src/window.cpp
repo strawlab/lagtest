@@ -48,6 +48,7 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     connect( this, SIGNAL(stopMeasurement()), this, SLOT(recvStopMeasurement()) );
     connect( this, SIGNAL(stop()), flipWindow, SLOT(receiveStop()) );
 
+    connect( flipWindow, SIGNAL(setLed(bool)), this, SIGNAL(setLed(bool)) );
 
     flipWindow->resize(150, 140);
     flipWindow->show();
@@ -382,7 +383,15 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
     painter.fillRect(r, (this->drawWhiteBG) ? Qt::white : Qt::black );
 
     screenFlip sf;
-    sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
+    //sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
+    if( this->drawWhiteBG)
+    {
+        sf.type = BLACK_TO_WHITE;
+        emit setLed( true );
+    } else {
+        sf.type = WHITE_TO_BLACK;
+        emit setLed( false );
+    }
     sf.local = this->clock->getCurrentTime();
 
     if( this->timer->isActive() )

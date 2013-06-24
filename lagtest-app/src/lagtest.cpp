@@ -65,7 +65,8 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( w, SIGNAL(generateReport()), this, SLOT( generateReport() ) );
     QObject::connect( w, SIGNAL(flashArduino()), this, SLOT( recvFlashArduino() ) );
     QObject::connect( w, SIGNAL(showLogWindow()), this, SLOT( recvShowLogWindow() ) );
-    QObject::connect( w, SIGNAL(selectPort()), this, SLOT( recvSelectPort() ) );
+    QObject::connect( w, SIGNAL(selectPort()), this, SLOT( recvSelectPort() ) );    
+    QObject::connect( w, SIGNAL(setLed(bool)), serial, SIGNAL( setLed(bool) ) );
 
 
     QObject::connect( lm, SIGNAL(signalStableLatency()),        w, SLOT(receiveStableLatency()) );
@@ -81,8 +82,8 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( serial, SIGNAL(sendFirmwareVersion(int)), this, SLOT(recvArduinoFirmwareVersion(int)) );
     QObject::connect( serial, SIGNAL(sendArduinoDetectionFailed()), this, SLOT(recvArduinoDetectionError()) );
 
-    QObject::connect( this, SIGNAL(stopMeasurement()), serial, SLOT( stop()) );
     QObject::connect( this, SIGNAL(sendFirmwareVersionCheck()), serial, SLOT(doVersionCheck()) );
+    QObject::connect( this, SIGNAL(stopMeasurement()), serial, SLOT( stop()) );    
     QObject::connect( this, SIGNAL(stopMeasurement()), lm, SLOT( stop()) );
     QObject::connect( this, SIGNAL(stopMeasurement()), w, SLOT( recvStopMeasurement()) );
 }

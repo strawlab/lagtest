@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 
     //LagTest lagtest( 300, 1000, 500, false);  //Dissable log window, writing output to the console. Can be usefull for problems happening during startup
     LagTest lagtest( 300, 1000, 500);
-    lagtest.setProperty("ArudinoFirmwareVersion", 2);
+    lagtest.setProperty("ArudinoFirmwareVersion", 4);
     lagtest.start();
 
 #endif
