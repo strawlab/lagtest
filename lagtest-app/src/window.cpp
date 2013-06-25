@@ -19,6 +19,10 @@
 #include <QMessageBox>
 #include <QPainter>
 #include <QFont>
+#include <QPolygon>
+#include <QPoint>
+#include <QApplication>
+#include <QDesktopWidget>
 
 Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     showPlot(false) , isRunning(false)
@@ -367,7 +371,8 @@ flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel* clock, RingBuffer<sc
 {
     this->timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(flipColor()));
-    timer->setInterval(flipRate);
+    //timer->setInterval(flipRate);
+    timer->setInterval(50);
 }
 
 
@@ -379,9 +384,26 @@ void flashingBGQPaint::flipColor()
 
 void flashingBGQPaint::paintEvent(QPaintEvent *event)
 {
+	static int cnt = 0;
     QPainter painter(this);
-    painter.fillRect(r, (this->drawWhiteBG) ? Qt::white : Qt::black );
 
+    int w = (QApplication::desktop())->width();
+    static QPolygon p;
+
+    //TIP: use this to test for vsync of or own. Simply trigger fast update calls. If vsync is off the vertical bar will be
+    //split into displayced vertical bars.
+    if( cnt == 0 ){
+    	p.clear();
+    	p << QPoint(0,0) << QPoint(20,0) << QPoint(20, 800) << QPoint(0,800);
+    }
+
+	painter.setBrush(QBrush("#c56c00"));
+	cnt = ( (cnt+1) % 100 );
+	painter.drawPolygon( p );
+	p.translate( w / 100, 0);
+
+	/*
+	painter.fillRect(r, (this->drawWhiteBG) ? Qt::white : Qt::black );
     screenFlip sf;
     //sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
     if( this->drawWhiteBG)
@@ -399,6 +421,7 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
         painter.setFont( QFont("Times", 10, QFont::Bold) );
         painter.setPen( Qt::red );
         painter.drawText(r, Qt::AlignTop | Qt::AlignHCenter, tr("Stop by pressing Space Bar"));
+
     } else {
         painter.setFont( QFont("Times", 20, QFont::Bold) );
         painter.setPen( Qt::red );
@@ -406,6 +429,7 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
     }
 
     this->store->put( &sf );
+    */
 }
 
 void flashingBGQPaint::receiveStart(){

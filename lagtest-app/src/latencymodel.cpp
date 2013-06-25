@@ -1,11 +1,11 @@
-#include "latencymodel.h"
 #include <limits>
 #include <stdlib.h>
 #include <math.h>
 
+#include "latencymodel.h"
+
 LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFlip> *screenFlips, RingBuffer<clockPair> *clock_storage, RingBuffer<adcMeasurement> *adc_storage)
-    : QObject(0),
-	tm(tm), screenFlips(screenFlips), clock(clock_storage), adc(adc_storage),
+    : QObject(0), tm(tm), screenFlips(screenFlips), clock(clock_storage), adc(adc_storage),
       timer(0),
       latencyCnt(0), flipCnt(0)
 {
@@ -19,6 +19,7 @@ LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFl
 
 void LatencyModel::stop()
 {
+	qDebug("Stopping latency model @%g" , this->measurementStartTime );
     this->timer->stop();    
 }
 

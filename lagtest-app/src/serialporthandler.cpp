@@ -331,6 +331,7 @@ void LagTestSerialPortComm::startCommunication()
                             sendTime = this->timeRequests[ frame.value ];
                             d1 = (now - sendTime)/2.0;
                             QString s;
+                            //sendDebugMsg( s.sprintf("Clock diff %g ", d1) );
                             if( d1 <= 0){
                                 //qCritical("somethign strange happens here ... %g", d1 );
 
@@ -489,7 +490,7 @@ bool LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRea
     const int bufferSize = 100;
     static uint8_t buffer[bufferSize];
     static int nBuffer = 0;
-    static int nEmptyReads;
+    static int nEmptyReads = 0;
     int i;
     bool validFrame;
     int t;
@@ -499,7 +500,8 @@ bool LagTestSerialPortComm::getNextFrame( timed_sample_t& frame, double& timeRea
     if( t == 0)
     {
         nEmptyReads ++;
-        if( nEmptyReads > 200 ){
+        if( nEmptyReads > 1000 ){
+        	nEmptyReads = 0;
             throw ReadErrorException();
         }
 
