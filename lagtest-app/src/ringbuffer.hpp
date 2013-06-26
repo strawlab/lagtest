@@ -21,6 +21,7 @@ public:
     int getSize() { return this->size; }
     void reset();
     int unread();
+    void seek(int offset);
     static void test();
 
 private:
@@ -57,6 +58,19 @@ int RingBuffer<T>::unread()
     else
         return (this->size-r)+w;
 }
+
+template <class T>
+void RingBuffer<T>::seek(int offset)
+{
+    int nr = r + (offset%size) ;
+    if( nr < 0 )
+        r = size - nr;
+    else if( nr >= size)
+        r = nr - size;
+    else
+        r = nr;
+}
+
 
 template <class T>
 void RingBuffer<T>::unget(){

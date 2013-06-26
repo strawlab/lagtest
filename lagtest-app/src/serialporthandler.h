@@ -22,6 +22,7 @@ signals:
     void sendArduinoDetectionFailed();
     void sendVersionCheck();
     void setLed( bool ledOn );
+    void setSystemLatencyDialog();
 
 public slots:
     void onThreadQuit();

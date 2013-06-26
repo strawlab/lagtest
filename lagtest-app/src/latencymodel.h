@@ -18,7 +18,7 @@ public:
     const static int latencyHistorySize = 5;
     const static int latencyStableSize = 5;
     const static int flipHistorySize = 5;
-    const static int measurementWindowSize = 150; //Take X adc samples before and after the screen flip
+    const static int measurementWindowSize = 200; //Take X adc samples before and after the screen flip
     const static int measurementHistoryLength = 10; //Keep the last 10 measurement windows and do averaging over them
 
     typedef uint8_t adcWindow[2][measurementHistoryLength][measurementWindowSize];
@@ -30,6 +30,8 @@ public:
     double getAvgLatencySD() { return avgLatencySD; }
     std::vector<double> getAllLatencies() { return allLatencies; }
     double getMeasurementDuration() { return this->tm->getCurrentTime() - this->measurementStartTime; }
+    void setSystemLatency(double systemLatency);
+    double getSystemLatency() { return systemLatency; }
 
 public slots:
     void update();
@@ -80,6 +82,7 @@ private:
     long nMeasurements[2];
 
     double measurementStartTime;
+    double systemLatency;
 };
 
 #endif // LATENCYMODEL_H

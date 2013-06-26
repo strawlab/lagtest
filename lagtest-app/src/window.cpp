@@ -82,6 +82,7 @@ QMenuBar* Window::createMenu()
     QAction* flashAction = optionsMenu->addAction(tr("upload new &Firmware to Arduino"));
     QAction* plotAction = optionsMenu->addAction(tr("show &Graph"));
     QAction* showLogAction = optionsMenu->addAction(tr("show debug &Log"));
+    QAction* setSystemLatencyAction = optionsMenu->addAction(tr("Set &system latency"));
     menuBar->addMenu(optionsMenu);
 
     QMenu* helpMenu = new QMenu(tr("&Help"), this);
@@ -97,6 +98,7 @@ QMenuBar* Window::createMenu()
     connect(aboutAction, SIGNAL(triggered()), this, SLOT( rcvShowAbout()) );
     connect(showLogAction, SIGNAL(triggered()), this, SIGNAL(showLogWindow()));
     connect(selectPortAction, SIGNAL(triggered()), this, SIGNAL(selectPort()));
+    connect(setSystemLatencyAction, SIGNAL(triggered()), this, SIGNAL(setSystemLatency()));
 
 
     return menuBar;

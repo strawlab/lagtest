@@ -34,6 +34,7 @@ public slots:
     void recvFlashArduino();
     void recvShowLogWindow();
     void recvSelectPort();
+    void setSystemLatencyDialog();
 
     void recvSerialMsg(QString msg);
     void recvSerialError(QString msg);
@@ -58,7 +59,7 @@ protected:
     LatencyModel* lm;
     SerialPortHandler* serial;
     TimeModel* tm;
-    Window* w;
+    Window* w;    
 };
 
 

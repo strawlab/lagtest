@@ -67,6 +67,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
     QObject::connect( w, SIGNAL(showLogWindow()), this, SLOT( recvShowLogWindow() ) );
     QObject::connect( w, SIGNAL(selectPort()), this, SLOT( recvSelectPort() ) );    
     QObject::connect( w, SIGNAL(setLed(bool)), serial, SIGNAL( setLed(bool) ) );
+    QObject::connect( w, SIGNAL(setSystemLatency()), this, SLOT( setSystemLatencyDialog() ) );
 
 
     QObject::connect( lm, SIGNAL(signalStableLatency()),        w, SLOT(receiveStableLatency()) );
@@ -95,8 +96,19 @@ LagTest::~LagTest()
 
 void LagTest::start()
 {
+    this->lm->setSystemLatency( settings->value("System/Latency").toDouble() );
     this->w->show();
     emit sendFirmwareVersionCheck();
+}
+
+void LagTest::setSystemLatencyDialog()
+{
+    bool ok;
+    double d = QInputDialog::getDouble(this->w, tr("System Latency"), tr("System Latency [ms]:"), this->lm->getSystemLatency() , 0, 100, 2, &ok);
+    if (ok){
+        qDebug("Setting System latency to %g" , d);
+        this->lm->setSystemLatency( d );
+    }
 }
 
 QPlainTextEdit* logWindow = NULL;
@@ -225,6 +237,7 @@ void LagTest::generateReport()
     text.append( s.sprintf("Average Latency:        %3.2f [ms]\n" , (this->lm->getAvgLatency()/1e6) ) );
     text.append( s.sprintf("Standard deviation:     %3.2f [ms]\n" , this->lm->getAvgLatencySD()/1e6 ) );
     text.append( s.sprintf("Measurement duration:   %3.2f [sec]\n" , this->lm->getMeasurementDuration() / 1e9 ) );
+    text.append( s.sprintf("System Latency:         %3.2f [sec]\n" , this->lm->getSystemLatency() ) );
 
     text.append( "\n" );
     text.append( tr("Operating System:  %1 \n").arg(this->getOS()) );
@@ -456,6 +469,7 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
     settings->setValue("Arduino/Port", port );
     settings->setValue("Arduino/avrDudePath", dir.relativeFilePath( avrDudePath ) );
     settings->setValue("Arduino/firmwarePath", dir.relativeFilePath( pathToFirmware ) );
+    settings->setValue("System/Latency", this->lm->getSystemLatency() );
     settings->sync();
     delete(settings);
 
@@ -479,6 +493,13 @@ bool LagTest::loadSettings()
             }
         } while( nPort.isEmpty() );
         settings->setValue("Arduino/Port", nPort );
+        settings->sync();
+    }
+
+    bool ok;
+    settings->value("System/Latency").toDouble(&ok);
+    if( !ok ){
+        settings->setValue("System/Latency", 10.0);
         settings->sync();
     }
 

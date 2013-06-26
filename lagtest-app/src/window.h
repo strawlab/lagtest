@@ -102,6 +102,7 @@ signals:
     void selectPort();
     void stop();
     void setLed(bool turnOn);
+    void setSystemLatency();
 
 public slots:
     void recvStartMeasurement();
