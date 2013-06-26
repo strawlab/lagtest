@@ -43,6 +43,8 @@ public slots:
 
 protected:
     QString getOS();
+    void disableVsync();
+    void restoreVsync();
     bool loadSettings();
     bool testPort(QString port);
     void doNewVersionCheck();

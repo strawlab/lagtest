@@ -75,14 +75,14 @@ set( CMAKE_FIND_LIBRARY_SUFFIXES ".lib" )
 # ============ Main Source files ============== #
 
 set (RRJ_SOURCES    "src/timemodel.cpp"
+                    "src/rs232.cpp"
                     "src/serialporthandler.cpp"
                     "src/latencymodel.cpp"
                     "src/window.cpp"
                     "src/lagtest.cpp"
                     "src/main.cpp"
-                    "rs232-src/rs232.cpp"
                                         )
-set (PRJ_INCLUDE "src" "rs232-src" )
+set (PRJ_INCLUDE "src" )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   add_executable( lagtest WIN32 ${RRJ_SOURCES} )

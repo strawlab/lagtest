@@ -371,8 +371,8 @@ flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel* clock, RingBuffer<sc
 {
     this->timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(flipColor()));
-    //timer->setInterval(flipRate);
-    timer->setInterval(50);
+    timer->setInterval(flipRate);
+    //timer->setInterval(50);
 }
 
 
@@ -387,22 +387,24 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
 	static int cnt = 0;
     QPainter painter(this);
 
-    int w = (QApplication::desktop())->width();
-    static QPolygon p;
+//    qDebug( "Paint Device %d", (painter.paintEngine())->type() );
 
-    //TIP: use this to test for vsync of or own. Simply trigger fast update calls. If vsync is off the vertical bar will be
-    //split into displayced vertical bars.
-    if( cnt == 0 ){
-    	p.clear();
-    	p << QPoint(0,0) << QPoint(20,0) << QPoint(20, 800) << QPoint(0,800);
-    }
+//    int w = (QApplication::desktop())->width();
+//    static QPolygon p;
 
-	painter.setBrush(QBrush("#c56c00"));
-	cnt = ( (cnt+1) % 100 );
-	painter.drawPolygon( p );
-	p.translate( w / 100, 0);
+//    //TIP: use this to test for vsync of or own. Simply trigger fast update calls. If vsync is off the vertical bar will be
+//    //split into displayced vertical bars.
+//    if( cnt == 0 ){
+//    	p.clear();
+//    	p << QPoint(0,0) << QPoint(20,0) << QPoint(20, 800) << QPoint(0,800);
+//    }
 
-	/*
+//	painter.setBrush(QBrush("#c56c00"));
+//	cnt = ( (cnt+1) % 100 );
+//	painter.drawPolygon( p );
+//	p.translate( w / 100, 0);
+
+
 	painter.fillRect(r, (this->drawWhiteBG) ? Qt::white : Qt::black );
     screenFlip sf;
     //sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
@@ -429,7 +431,7 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
     }
 
     this->store->put( &sf );
-    */
+
 }
 
 void flashingBGQPaint::receiveStart(){

@@ -31,7 +31,7 @@
 LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow)
     : w(NULL), serial(NULL), lm(NULL)
 {
-
+    this->disableVsync();
 
     if( createLogWindow )
         this->setupLogWindow();
@@ -90,6 +90,7 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 
 LagTest::~LagTest()
 {
+    this->restoreVsync();
 }
 
 void LagTest::start()
@@ -115,6 +116,36 @@ void myMessageOutput(QtMsgType type, const char *msg)
         fprintf(stderr, "%s", msg );
 #endif
     }
+}
+
+void LagTest::disableVsync()
+{
+#ifdef Q_OS_WIN
+    QProcess proc;
+    QStringList args;
+    args << "stop";
+    args << "uxsms";
+    proc.execute ("net", args);
+#elif defined( Q_OS_LINUX )
+    //Nothing to do here
+#else
+    ERROR UNDEFINED SYSTEM
+#endif
+}
+
+void LagTest::restoreVsync()
+{
+#ifdef Q_OS_WIN
+    QProcess proc;
+    QStringList args;
+    args << "start";
+    args << "uxsms";
+    proc.execute ("net", args);
+#elif defined( Q_OS_LINUX )
+   //Nothing to do here
+#else
+    ERROR UNDEFINED SYSTEM
+#endif
 }
 
 void LagTest::setupLogWindow()
