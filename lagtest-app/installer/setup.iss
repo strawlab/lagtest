@@ -8,6 +8,7 @@ DefaultGroupName=lagtest
 UninstallDisplayIcon={app}\lagtest.exe
 OutputDir=..\installer
 SourceDir=C:\Users\pasieka\Projects\qlagtest\bin
+ArchitecturesInstallIn64BitMode=x64
 
 [Files]
 Source: "lagtest.exe"; DestDir: "{app}"
@@ -24,8 +25,10 @@ Source: "drivers\*"; DestDir: "{app}\drivers" ; Flags: recursesubdirs
 Name: "{group}\lagtest"; Filename: "{app}\lagtest.exe"
 
 [Run]
-Filename: "{app}\drivers\dpinst.exe"; Parameters: "/SW" ;WorkingDir: "{app}\drivers"; Description: "Install Arduino drivers"; Flags: postinstall runascurrentuser
+Filename: "{app}\drivers\dpinst64.exe"; Parameters: "/SW" ;WorkingDir: "{app}\drivers"; Description: "Install Arduino drivers"; Flags: postinstall runascurrentuser ; Check: Is64BitInstallMode
+Filename: "{app}\drivers\dpinst32.exe"; Parameters: "/SW" ;WorkingDir: "{app}\drivers"; Description: "Install Arduino drivers"; Flags: postinstall runascurrentuser ; Check: not Is64BitInstallMode
+Filename: "{app}\drivers\devcon.exe"; Parameters: "rescan" ; Flags: runascurrentuser
 Filename: "{app}\flash.exe"; Parameters: "{app}\tools\avrdude.exe {app}\firmware.hex"; Description: "Flash Arduino with newest lagtest firmware"; Flags: postinstall
-Filename: "{app}\lagtest.exe"; Description: "Start Lagtest"; Flags: postinstall nowait
+Filename: "{app}\lagtest.exe"; Description: "Start Lagtest"; Flags: postinstall nowait runascurrentuser
 
 
