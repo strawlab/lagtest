@@ -252,8 +252,8 @@ void LatencyModel::createAvgWindow()
 
     for( j=0; j < measurementWindowSize; j++ )
     {
-        avgAdcWindow[WHITE_TO_BLACK][j] = avgAdcWindow[WHITE_TO_BLACK][j] / n[WHITE_TO_BLACK];
-        avgAdcWindow[BLACK_TO_WHITE][j] = avgAdcWindow[BLACK_TO_WHITE][j] / n[BLACK_TO_WHITE];
+        avgAdcWindow[WHITE_TO_BLACK][j] = avgAdcWindow[WHITE_TO_BLACK][j] / (double) n[WHITE_TO_BLACK];
+        avgAdcWindow[BLACK_TO_WHITE][j] = avgAdcWindow[BLACK_TO_WHITE][j] / (double) n[BLACK_TO_WHITE];
     }
 
 //    buffer[0] = 0;
@@ -348,7 +348,7 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
 
     if( !found || (this->adc->unread() < measurementWindowSize) )
     {   //Could not find a sample close to the screen flip
-        qWarning("Not enought adc sample data!");
+        qWarning("Not enough adc sample data!");
         found = false;
     } else {
         //The WindowSize Previous elements in the adc ringbuffer are part of this sample window

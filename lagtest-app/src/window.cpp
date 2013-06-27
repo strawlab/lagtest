@@ -336,7 +336,8 @@ void Window::receiveLatencyUpdate(LatencyModel* lm)
     al = lm->getAvgLatency() / 1e6;
 
     this->msg->setText( "Found a Latency of" );
-    this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f|%.2f ms", ll/1000000.0, al, lm->getAvgLatencySD()/1000000.0) );
+    //this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f|%.2f ms", ll/1000000.0, al, lm->getAvgLatencySD()/1000000.0) );
+    this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f ms", ll/1000000.0, al) );
 
     double x[2], y[2];
     double ymin, ymax;

@@ -238,7 +238,7 @@ void LagTest::generateReport()
 
     text.append( "\n" );
     text.append( s.sprintf("Average Latency:        %3.2f [ms]\n" , (this->lm->getAvgLatency()/1e6) ) );
-    text.append( s.sprintf("Standard deviation:     %3.2f [ms]\n" , this->lm->getAvgLatencySD()/1e6 ) );
+    //text.append( s.sprintf("Standard deviation:     %3.2f [ms]\n" , this->lm->getAvgLatencySD()/1e6 ) );
     text.append( s.sprintf("Measurement duration:   %3.2f [sec]\n" , this->lm->getMeasurementDuration() / 1e9 ) );
     text.append( s.sprintf("System Latency:         %3.2f [sec]\n" , this->lm->getSystemLatency() ) );
 
