@@ -87,7 +87,6 @@ int main(int argc, char **argv)
     LagTest lagtest( 300, 1000, 500);
     lagtest.setProperty("ArudinoFirmwareVersion", 4);
     lagtest.start();
-
 #endif
     return app.exec();
 }

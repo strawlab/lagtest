@@ -294,10 +294,10 @@ void LagTestSerialPortComm::startCommunication()
             QString s;
 
             if(setLedState == LED_ON){
-                this->sendErrorMsg(s.sprintf("Led ON %g", this->tm->getCurrentTime() ));
+                //this->sendErrorMsg(s.sprintf("Led ON %g", this->tm->getCurrentTime() ));
                 this->sendArduinoLedState(true);
             } else {
-                this->sendErrorMsg(s.sprintf("Led OFF %g", this->tm->getCurrentTime() ));
+                //this->sendErrorMsg(s.sprintf("Led OFF %g", this->tm->getCurrentTime() ));
                 this->sendArduinoLedState(false);
             }
             setLedState = INACTIVE;

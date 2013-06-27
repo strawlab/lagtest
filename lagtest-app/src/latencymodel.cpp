@@ -95,7 +95,7 @@ void LatencyModel::update()
 {
     double latency;
 
-    qDebug("Latency Update IN @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
+    //qDebug("Latency Update IN @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
 
     //Read all new clock pairs and use them to update the time model
     clockPair cp;
@@ -134,7 +134,7 @@ void LatencyModel::update()
         emit signalUpdate(this);
     }
 
-    qDebug("Latency Update OUT @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
+    //qDebug("Latency Update OUT @%g: RingBuffers #Clocks %d , #Screen Fllips %d , #ADC %d" , this->tm->getCurrentTime() , clock->unread(), screenFlips->unread(), adc->unread() );
 }
 
 void LatencyModel::addLatency(double newLatency)
@@ -298,19 +298,20 @@ bool LatencyModel::detectdisplacedSensor()
     qsort(sorted[BLACK_TO_WHITE], measurementWindowSize, sizeof(double), cmpDouble);
     
     
-    for(j=0; j < 5; j++){
+    for(j=0; j < 10; j++){
     	min[WHITE_TO_BLACK] += sorted[WHITE_TO_BLACK][j];
     	max[WHITE_TO_BLACK] += sorted[WHITE_TO_BLACK][measurementWindowSize-1-j];
     	
     	min[BLACK_TO_WHITE] += sorted[BLACK_TO_WHITE][j];
     	max[BLACK_TO_WHITE] += sorted[BLACK_TO_WHITE][measurementWindowSize-1-j];
     }
-    min[WHITE_TO_BLACK] = ceil ( min[WHITE_TO_BLACK] / 5.0 );
-    max[WHITE_TO_BLACK] = floor ( max[WHITE_TO_BLACK] / 5.0 );
+    min[WHITE_TO_BLACK] = ceil ( min[WHITE_TO_BLACK] / 10.0 );
+    max[WHITE_TO_BLACK] = floor ( max[WHITE_TO_BLACK] / 10.0 );
 	
-	min[BLACK_TO_WHITE] = ceil ( min[BLACK_TO_WHITE] / 5.0 );
-	max[BLACK_TO_WHITE] = floor ( max[BLACK_TO_WHITE] / 5.0 );
+	min[BLACK_TO_WHITE] = ceil ( min[BLACK_TO_WHITE] / 10.0 );
+	max[BLACK_TO_WHITE] = floor ( max[BLACK_TO_WHITE] / 10.0 );
 	
+	//qDebug("Measurement Window seems to flat. Mins [%f/%f] , Max [%f/%f]", min[WHITE_TO_BLACK] , min[BLACK_TO_WHITE], max[WHITE_TO_BLACK], max[BLACK_TO_WHITE]);
 	if( min[WHITE_TO_BLACK] >= max[WHITE_TO_BLACK] ){
 		qDebug("Measurement Window seems to flat. Mins [%f/%f] , Max [%f/%f]", min[WHITE_TO_BLACK] , min[BLACK_TO_WHITE], max[WHITE_TO_BLACK], max[BLACK_TO_WHITE]);
 		return true;
@@ -340,7 +341,8 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
         if( this->tm->toLocalTime(s) > sf.local ){
             found = true;
             this->adc->seek( -40 );
-            qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s) + this->systemLatency, this->adc->unread() );
+            this->adc->get(&s);
+            //qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s) + this->systemLatency, this->adc->unread() );
         }
     }
 

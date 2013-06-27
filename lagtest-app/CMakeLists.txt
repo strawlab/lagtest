@@ -45,7 +45,7 @@ ENDIF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     message( "=== Detected Linux build ===")
 
-    find_package(Qt4 4.7 REQUIRED QtCore QtGui QtXml QtNetwork)
+    find_package(Qt4 4.7 REQUIRED QtCore QtGui QtXml QtNetwork QtOpenGL )
     include(${QT_USE_FILE})
 
     set(EIGEN3_INCLUDE_DIR "/usr/include/eigen3") # ubuntu: libeigen3-dev
@@ -75,14 +75,14 @@ set( CMAKE_FIND_LIBRARY_SUFFIXES ".lib" )
 # ============ Main Source files ============== #
 
 set (RRJ_SOURCES    "src/timemodel.cpp"
-                    "src/rs232.cpp"
+                    "rs232-src/rs232.cpp"
                     "src/serialporthandler.cpp"
                     "src/latencymodel.cpp"
                     "src/window.cpp"
                     "src/lagtest.cpp"
                     "src/main.cpp"
                                         )
-set (PRJ_INCLUDE "src" )
+set (PRJ_INCLUDE "src" "rs232-src" )
 
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
   add_executable( lagtest WIN32 ${RRJ_SOURCES} )

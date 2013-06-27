@@ -45,7 +45,7 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     layout->addWidget(latency, 0);
 
     QGLFormat fmt = QGLFormat::defaultFormat();
-    fmt.setSwapInterval(0); //Dissable Vsync
+    fmt.setSwapInterval(0); //Disable Vsync
     QGLFormat::setDefaultFormat(fmt);
 
     //flipWindow = new flashingBGQPaint(500, tm, screenFlips);
@@ -321,6 +321,7 @@ void Window::receiveNewMeasurementWindow(uint8_t* window, double *avgWindow, dou
     updateCurveIdx[type] = (updateCurveIdx[type]+1)%nCurves;
     this->curves[type][this->updateCurveIdx[type]]->setSamples( xData, yData, LatencyModel::measurementWindowSize );
 
+
     //Update Mean curve
     this->meanCurves[type]->setSamples( xData, avgWindow, LatencyModel::measurementWindowSize );
 
@@ -332,19 +333,37 @@ void Window::receiveLatencyUpdate(LatencyModel* lm)
     QString str;
     double ll,al;
     ll = lm->getLastLatency();
-    al = lm->getAvgLatency();
+    al = lm->getAvgLatency() / 1e6;
 
     this->msg->setText( "Found a Latency of" );
-    this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f|%.2f ms", ll/1000000.0, al/1000000.0, lm->getAvgLatencySD()/1000000.0) );
+    this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f|%.2f ms", ll/1000000.0, al, lm->getAvgLatencySD()/1000000.0) );
 
     double x[2], y[2];
-    x[0] = al / 1000000.0; y[0] = -5.0;
-    x[1] = al / 1000000.0; y[1] = this->meanCurves[WHITE_TO_BLACK]->maxYValue() + 10;
-    this->vLine[WHITE_TO_BLACK]->setSamples( x, y, 2 );
-    this->vLine[BLACK_TO_WHITE]->setSamples( x, y, 2 );
+    double ymin, ymax;
+    ymin = -5.0;
+    ymax = this->curves[WHITE_TO_BLACK][this->updateCurveIdx[WHITE_TO_BLACK]]->maxYValue() + 10.0;
 
-    this->cPlots[WHITE_TO_BLACK]->setAxisScale(QwtPlot::xBottom, 0, (al / 1000000.0) * 2); this->cPlots[WHITE_TO_BLACK]->replot();
-    this->cPlots[BLACK_TO_WHITE]->setAxisScale(QwtPlot::xBottom, 0, (al / 1000000.0) * 2); this->cPlots[BLACK_TO_WHITE]->replot();
+    x[0] = al; y[0] = ymin;
+    x[1] = al; y[1] = ymax;
+
+    this->vLine[WHITE_TO_BLACK]->setSamples( x, y, 2 );
+    this->cPlots[WHITE_TO_BLACK]->setAxisScale( QwtPlot::yLeft, ymin, ymax);
+    this->vLine[BLACK_TO_WHITE]->setSamples( x, y, 2 );
+    this->cPlots[WHITE_TO_BLACK]->setAxisScale( QwtPlot::yLeft, ymin, ymax);
+
+
+    //Limit the x axis to show a little bit of measurement values before the flip and not too much after it
+    double xmin, xmax;
+    xmin = -(al/2.0);
+    xmax = al * 2.0;
+    if( xmin < -20.0) xmin = -20.0;
+    if( xmin > -5.0) xmin = -5.0;
+
+    if( xmax < 10.0) xmax = 10.0;
+    if( xmax > 200.00) xmax = 200.0;
+
+    this->cPlots[WHITE_TO_BLACK]->setAxisScale(QwtPlot::xBottom, xmin, xmax); this->cPlots[WHITE_TO_BLACK]->replot();
+    this->cPlots[BLACK_TO_WHITE]->setAxisScale(QwtPlot::xBottom, xmin, xmax); this->cPlots[BLACK_TO_WHITE]->replot();
 
     this->vLine[WHITE_TO_BLACK]->show();
     this->vLine[BLACK_TO_WHITE]->show();

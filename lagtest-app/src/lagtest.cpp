@@ -91,6 +91,9 @@ LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, b
 
 LagTest::~LagTest()
 {
+	if( this->serial ) delete(this->serial);
+	if( this->lm ) delete(this->lm);
+	if( this->w ) delete(this->w);
     this->restoreVsync();
 }
 
