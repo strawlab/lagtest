@@ -28,8 +28,7 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     showPlot(false) , isRunning(false)
 {
     qDebug("Creating main window ...");
-    QWidget* flipWindow;
-	enum drawingType drawing = Window::QPAINT;
+    QWidget* flipWindow;	
     setWindowTitle("Lagtest - How slow is your display?");
     this->resize(640, 480);
 
@@ -45,7 +44,12 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     layout->addWidget(msg, 0);
     layout->addWidget(latency, 0);
 
-    flipWindow = new flashingBGQPaint(500, tm, screenFlips);
+    QGLFormat fmt = QGLFormat::defaultFormat();
+    fmt.setSwapInterval(0); //Dissable Vsync
+    QGLFormat::setDefaultFormat(fmt);
+
+    //flipWindow = new flashingBGQPaint(500, tm, screenFlips);
+    flipWindow = new flashingBGQPaint(500, tm, screenFlips, fmt, this);
 
     connect( this, SIGNAL(startMeasurement()), flipWindow, SLOT(receiveStart()) );
     connect( this, SIGNAL(startMeasurement()), this, SLOT(recvStartMeasurement()) );
@@ -364,15 +368,20 @@ SubWindow::SubWindow(QWidget* parent) : QWidget( parent , Qt::Window ) {}
 // ########################################################################################################
 
 
-flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel* clock, RingBuffer<screenFlip> *store) :
-    QWidget(0),
-    r(this->rect()),
+//flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel* clock, RingBuffer<screenFlip> *store) :
+flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel *clock, RingBuffer<screenFlip> *store, QGLFormat &fmt, QWidget* parent) :
+    //QWidget(0),
+    QGLWidget(fmt, parent),
+    r(parent->rect()),
     drawWhiteBG(false),
     clock(clock),
     store(store)
 {
     this->timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(flipColor()));
+
+    //setFixedSize( parent->size() );
+
     timer->setInterval(flipRate);
     //timer->setInterval(50);
 }
@@ -389,24 +398,26 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
 	static int cnt = 0;
     QPainter painter(this);
 
-//    qDebug( "Paint Device %d", (painter.paintEngine())->type() );
+    /*
+    //TIP: use this to test for vsync of or own. Simply trigger fast update calls. If vsync is off the vertical bar will be
+    //split into displayced vertical bars.
+    qDebug( "Paint Device %d , SwapInterval %d", (painter.paintEngine())->type() , this->format().swapInterval() );
 
-//    int w = (QApplication::desktop())->width();
-//    static QPolygon p;
+    int w = (QApplication::desktop())->width();
+    static QPolygon p;
 
-//    //TIP: use this to test for vsync of or own. Simply trigger fast update calls. If vsync is off the vertical bar will be
-//    //split into displayced vertical bars.
-//    if( cnt == 0 ){
-//    	p.clear();
-//    	p << QPoint(0,0) << QPoint(20,0) << QPoint(20, 800) << QPoint(0,800);
-//    }
+    if( cnt == 0 ){
+        p.clear();
+        p << QPoint(0,0) << QPoint(20,0) << QPoint(20, 800) << QPoint(0,800);
+    }
 
-//	painter.setBrush(QBrush("#c56c00"));
-//	cnt = ( (cnt+1) % 100 );
-//	painter.drawPolygon( p );
-//	p.translate( w / 100, 0);
+    painter.setBrush(QBrush("#c56c00"));
+    cnt = ( (cnt+1) % 100 );
+    painter.drawPolygon( p );
+    p.translate( w / 100, 0);
+    */
 
-
+    //qDebug( "Paint Device %d , SwapInterval %d", (painter.paintEngine())->type() , this->format().swapInterval() );
 	painter.fillRect(r, (this->drawWhiteBG) ? Qt::white : Qt::black );
     screenFlip sf;
     //sf.type = this->drawWhiteBG ? BLACK_TO_WHITE : WHITE_TO_BLACK;
@@ -432,8 +443,7 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
         painter.drawText(r, Qt::AlignCenter, tr("Start by pressing Space Bar"));
     }
 
-    this->store->put( &sf );
-
+    this->store->put( &sf );    
 }
 
 void flashingBGQPaint::receiveStart(){

@@ -55,11 +55,16 @@ class QwtPlotCurve;
 class LatencyModel;
 class QMenuBar;
 
-class flashingBGQPaint : public QWidget
+#include <QGLWidget>
+#include <QGLFormat>
+
+//class flashingBGQPaint : public QWidget
+class flashingBGQPaint : public QGLWidget
 {
     Q_OBJECT
 public:
-    explicit flashingBGQPaint(int flipRate, TimeModel *clock, RingBuffer<screenFlip> *store);
+    //explicit flashingBGQPaint(int flipRate, TimeModel *clock, RingBuffer<screenFlip> *store);
+    explicit flashingBGQPaint(int flipRate, TimeModel *clock, RingBuffer<screenFlip> *store, QGLFormat &fmt, QWidget* parent);
 
 public slots:
     void receiveStart();
