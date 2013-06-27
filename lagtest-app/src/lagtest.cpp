@@ -447,8 +447,7 @@ int LagTest::programArduino(QString avrDudePath, QString pathToFirmware, QString
 #ifdef Q_OS_WIN
     sprintf(buffer, "-F -v -pm328p -c arduino -b 115200 -P\\\\.\\%s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
 #elif defined( Q_OS_LINUX )
-    qCritical("Linux implementation missing!");
-    return -1;
+    sprintf(buffer, "-F -v -p m328p -c arduino -b 115200 -P %s -D -Uflash:w:%s:i", port.toStdString().c_str(), pathToFirmware.toStdString().c_str() );
 #else
     ERROR UNDEFINED SYSTEM
 #endif
@@ -496,15 +495,23 @@ bool LagTest::loadSettings()
             }
         } while( nPort.isEmpty() );
         settings->setValue("Arduino/Port", nPort );
-        settings->sync();
+    }
+
+    if( !settings->contains( "Arduino/firmwarePath") ){
+    	settings->setValue( "Arduino/firmwarePath", "firmware.hex" );
+    }
+
+    if( !settings->contains( "Arduino/avrDudePath") ){
+    	settings->setValue( "Arduino/avrDudePath", "avrdude" );
     }
 
     bool ok;
     settings->value("System/Latency").toDouble(&ok);
     if( !ok ){
         settings->setValue("System/Latency", 10.0);
-        settings->sync();
     }
+
+    settings->sync();
 
     return true;
 
