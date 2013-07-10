@@ -145,7 +145,7 @@ class SerialThread(threading.Thread):
                     self.vq.put('no response')
 
     def _handle_version(self, value, epoch, count):
-        assert value==2
+        assert value==4
         self._vquery_time = time_func()
         self._version_check_done = True
         self.vq.put('OK')
