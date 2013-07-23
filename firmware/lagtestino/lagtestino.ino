@@ -40,7 +40,6 @@ volatile uint8_t new_adc_sample=0;
 
 // Global variable for clock measurement ---------------------------------------
 volatile epoch_dtype epoch=0;
-volatile uint8_t tit = 0;
 
 // Interrupt service routine for new analog sample ready -----------------------
 ISR(ADC_vect)
@@ -48,12 +47,6 @@ ISR(ADC_vect)
 
     accum += ADCH;
     n_samples++;
-
-    if( tit++ % 2){
-          digitalWrite(7, 1);
-        } else {
-          digitalWrite(7, 0);
-        }
 
     if (n_samples >= max_n_samples) {
         adc_sample.value = 0x0FF & (accum >> log2_n_samples); // Clamp sample to [0, 255]
@@ -67,14 +60,7 @@ ISR(ADC_vect)
 
         new_adc_sample=1;
 
-        if( tit++ % 2){
-          digitalWrite(2, 1);
-        } else {
-          digitalWrite(2, 0);
-        }
     }
-
-
 
 }
 
