@@ -146,7 +146,7 @@ class SerialThread(threading.Thread):
                     self.vq.put('no response')
 
     def _handle_version(self, value, epoch, count):
-        expected = 4
+        expected = 5
         if value!=expected:
             self.error = 'Expected firmware version %d, got %d'%(expected,value)
 
