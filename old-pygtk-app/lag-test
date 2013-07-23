@@ -155,13 +155,10 @@ class SerialThread(threading.Thread):
 
         while len(self._queries) > 50:
             old_qi = self._queries.popitem(last=False)
-            print 'old_qi',old_qi
-            print 'WARNING: never got return for query %d'%old_qi
 
         try:
             send_timestamp = self._queries.pop( qi )
         except KeyError:
-            print 'WARNING: could not find original data for query %d'%qi
             return
 
         max_error = now-send_timestamp
@@ -207,7 +204,6 @@ class SerialThread(threading.Thread):
                 result = buf[9:]
 
             if not valid:
-                print 'not valid'
                 result = buf[1:] # ignore this potential start and do a frame-shift
 
         return result
@@ -269,7 +265,6 @@ class MyApp:
         GLib.timeout_add(int(1000*TRIM_DT), self.on_trim_data)
 
     def on_clear_data(self, btn=None):
-        print 'cleared data'
         self.switches = []
         self.times = []
         self.adcs = []
@@ -356,7 +351,7 @@ class MyApp:
                 try:
                     self.time_model = get_time_model(tdata[:,1], tdata[:,0])
                 except TimeFitError, err:
-                    print 'WARNING: error fitting time_model: %s'%err
+                    pass
 
         return True
 
