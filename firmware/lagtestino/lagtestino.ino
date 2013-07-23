@@ -112,14 +112,14 @@ void setup_adc() {
     ADCSRA |= (1 << ADATE);   // Set free running mode
     ADCSRA |= (1 << ADEN);    // Enable the ADC
     ADCSRA |= (1 << ADIE);    // Enable Interrupts
-    
+
     // Remeber ADC needs about 13 cycles , in the ISR averaging over 16 samples
     //Adc Sample rate = 16Mhz/64 , 1200 samples/sec *** MAX VALUE POSSIBLE ***
     //Because we have a Bautrate of 115200 = 11.5 kBytes per second , 9 bytes per sample = 1300 samples top!
-      ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ) ;  
+      ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ) ;
 
 //    ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ) | ( 1 << ADPS0 ) ;  //Adc Sample rate = 16Mhz/128 = 125khz , 600 Samples/Sec
-    
+
     ADCSRA |= (1 << ADSC);    // Start the ADC conversion
     sei();
 }
