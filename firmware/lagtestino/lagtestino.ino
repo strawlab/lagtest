@@ -41,6 +41,8 @@ volatile uint8_t new_adc_sample=0;
 // Global variable for clock measurement ---------------------------------------
 volatile epoch_dtype epoch=0;
 
+#define CLAMP255( val ) (val) > 255 ? 255 : (val);
+
 // Interrupt service routine for new analog sample ready -----------------------
 ISR(ADC_vect)
 {
@@ -49,7 +51,7 @@ ISR(ADC_vect)
     n_samples++;
 
     if (n_samples >= max_n_samples) {
-        adc_sample.value = 0x0FF & (accum >> log2_n_samples); // Clamp sample to [0, 255]
+        adc_sample.value = CLAMP255(accum);
 
         // stamp data with current timestamp
         adc_sample.epoch = epoch;
