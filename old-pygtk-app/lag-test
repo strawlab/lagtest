@@ -84,6 +84,7 @@ class SerialThread(threading.Thread):
     def __init__(self,name,args):
         super(SerialThread,self).__init__(name=name)
         self.__args=args
+        self.error = None
 
     def set_led(self,value):
         char = chr(value)
@@ -145,7 +146,11 @@ class SerialThread(threading.Thread):
                     self.vq.put('no response')
 
     def _handle_version(self, value, epoch, count):
-        assert value==4
+        expected = 4
+        if value!=expected:
+            self.error = 'Expected firmware version %d, got %d'%(expected,value)
+
+        assert value==expected
         self._vquery_time = time_func()
         self._version_check_done = True
         self.vq.put('OK')
@@ -260,6 +265,7 @@ class MyApp:
         w.show_all()
 
         GLib.timeout_add(100, self.getdata)
+        GLib.timeout_add(1000, self.on_test_serial_thread)
         GLib.timeout_add(int(1000*DRAW_DT), self.update_ui)
         GLib.timeout_add(int(1000*SWITCH_DT), self.switch_color)
         GLib.timeout_add(int(1000*TRIM_DT), self.on_trim_data)
@@ -425,7 +431,21 @@ class MyApp:
                 break
             else:
                 self.device_status.set_text('USB status: %s'%t)
+        return True
 
+    def on_test_serial_thread(self):
+        if not self.ser_thread.is_alive():
+            dialog = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.ERROR,
+                                       Gtk.ButtonsType.OK, "Arduino communication failed.")
+            if self.ser_thread.error is not None:
+                dialog.format_secondary_text(self.ser_thread.error)
+            else:
+                dialog.format_secondary_text("Please check your connections, your "
+                                             "firmware version and restart this program.")
+            dialog.run()
+
+            dialog.destroy()
+            return False
         return True
 
     def switch_color(self):
