@@ -68,7 +68,7 @@
 int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
-    QCoreApplication::setApplicationVersion( "0.9.2" );
+    QCoreApplication::setApplicationVersion( "0.9.3" );
     app.setStyle( QStyleFactory::create("windowsxp") ); //Do this to prevent bug: https://bugreports.qt-project.org/browse/QTBUG-29720
 
 //#define FLASH
@@ -85,8 +85,9 @@ int main(int argc, char **argv)
 
     //LagTest lagtest( 300, 1000, 500, false);  //Dissable log window, writing output to the console. Can be usefull for problems happening during startup
     LagTest lagtest( 300, 1000, 500);
-    lagtest.setProperty("ArudinoFirmwareVersion", 4);
+    lagtest.setProperty("ArudinoFirmwareVersion", 5);
     lagtest.start();
+
 #endif
     return app.exec();
 }

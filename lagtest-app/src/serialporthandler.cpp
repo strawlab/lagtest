@@ -331,13 +331,13 @@ void LagTestSerialPortComm::startCommunication()
                             sendTime = this->timeRequests[ frame.value ];
                             d1 = (now - sendTime)/2.0;
                             QString s;
-                            //sendDebugMsg( s.sprintf("Clock diff %g ", d1) );
+                            //sendDebugMsg( s.sprintf("RTT %g ", (now - sendTime)) );
                             if( d1 <= 0){
                                 //qCritical("somethign strange happens here ... %g", d1 );
 
                                 this->sendErrorMsg(s.sprintf("somethign strange happens here ... %g", d1 ));
                                 d1 = 0;
-                            } else if ( d1 > 15000000 ){
+                            } else if ( d1 > 10000000 ){
                                 sendErrorMsg( s.sprintf("Too high clock diff %g ", d1) );
                             }
                             cp.local = sendTime + d1;

@@ -107,12 +107,20 @@ void setup_adc() {
                               // convertion will read the higher eight
                               // bits only ( i.e dividing the result by 4 ).
 
+    ADCSRA = 0;               //If this is not set, setting Sample rate fails?!
+
     ADCSRA |= (1 << ADATE);   // Set free running mode
     ADCSRA |= (1 << ADEN);    // Enable the ADC
     ADCSRA |= (1 << ADIE);    // Enable Interrupts
+    
+    // Remeber ADC needs about 13 cycles , in the ISR averaging over 16 samples
+    //Adc Sample rate = 16Mhz/64 , 1200 samples/sec *** MAX VALUE POSSIBLE ***
+    //Because we have a Bautrate of 115200 = 11.5 kBytes per second , 9 bytes per sample = 1300 samples top!
+      ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ) ;  
 
+//    ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ) | ( 1 << ADPS0 ) ;  //Adc Sample rate = 16Mhz/128 = 125khz , 600 Samples/Sec
+    
     ADCSRA |= (1 << ADSC);    // Start the ADC conversion
-
     sei();
 }
 
@@ -134,9 +142,9 @@ void setup() {
 
 // Send data with our simple protocol to the host computer ---------------------
 static inline void send_data(const timed_sample_t samp, const char header) {
-    const char * buf;
+    const uint8_t * buf;
     Serial.write(header);
-    buf = (const char*)&(samp);
+    buf = (const uint8_t*)&(samp);
     uint8_t chksum=0;
     for (uint8_t i=0; i< sizeof(timed_sample_t); i++) {
         chksum += buf[i];
@@ -190,7 +198,7 @@ void loop() {
 
             static timed_sample_t version_request;
 
-            version_request.value = 4;
+            version_request.value = 5;
 
             uint8_t SaveSREG_ = SREG;   // save interrupt flag
             cli(); // disable interrupts
