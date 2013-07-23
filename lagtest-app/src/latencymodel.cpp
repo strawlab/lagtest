@@ -6,7 +6,7 @@
 
 LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFlip> *screenFlips, RingBuffer<clockPair> *clock_storage, RingBuffer<adcMeasurement> *adc_storage)
     : QObject(0), tm(tm), screenFlips(screenFlips), clock(clock_storage), adc(adc_storage),
-      timer(0), systemLatency(10.0),
+      timer(0),
       latencyCnt(0), flipCnt(0)
 {
     qDebug("Creating LatencyModel ...");
@@ -15,10 +15,6 @@ LatencyModel::LatencyModel(int ms_updateRate, TimeModel *tm, RingBuffer<screenFl
     connect( timer, SIGNAL(timeout()), this, SLOT( update() ));
     this->timer->setInterval(ms_updateRate);
     this->resetHistory();
-}
-
-void LatencyModel::setSystemLatency(double systemLatency){
-    this->systemLatency = systemLatency;
 }
 
 void LatencyModel::stop()
@@ -329,8 +325,6 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
     bool found = false;
     adcMeasurement s;
 
-    sf.local += this->systemLatency*1e6;
-
     //qDebug("Trying to find a flip at %g", sf.local);
     //Consume all adc sample values till we get one taken after the flip
     while( !found && this->adc->canGet())
@@ -342,7 +336,7 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
             found = true;
             this->adc->seek( -40 );
             this->adc->get(&s);
-            //qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s) + this->systemLatency, this->adc->unread() );
+            //qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s), this->adc->unread() );
         }
     }
 

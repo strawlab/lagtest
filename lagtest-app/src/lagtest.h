@@ -34,7 +34,6 @@ public slots:
     void recvFlashArduino();
     void recvShowLogWindow();
     void recvSelectPort();
-    void setSystemLatencyDialog();
 
     void recvSerialMsg(QString msg);
     void recvSerialError(QString msg);
