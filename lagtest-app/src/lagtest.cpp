@@ -8,7 +8,6 @@
 #include "timemodel.h"
 #include "latencymodel.h"
 #include "serialporthandler.h"
-#include "window.h"
 #include "rs232.h"
 #include <QPlainTextEdit>
 #include <qapplication.h>
@@ -27,6 +26,14 @@
 #include <QDir>
 
 #include <QTextStream>
+
+#ifdef Q_OS_WIN
+    #include <window.h>
+#elif defined( Q_OS_LINUX )
+    //Nothing to do here
+#else
+    ERROR UNDEFINED SYSTEM
+#endif
 
 LagTest::LagTest(int clockSyncPeriod, int latencyUpdate, int screenFlipPeriod, bool createLogWindow)
     : w(NULL), serial(NULL), lm(NULL)
@@ -233,6 +240,7 @@ void LagTest::generateReport()
     text.append( tr("Operating System:  %1 \n").arg(this->getOS()) );
     text.append( tr("Desktop resolution:  %1x%2 \n").arg( (QApplication::desktop())->width() ).arg((QApplication::desktop())->height()) );
     text.append( tr("Desktop Color Depth:  %1 Bit \n").arg( (QApplication::desktop())->depth() ) );
+    text.append( tr("Display Refresh Rate:  %.2f Hz \n").arg( this->getRefreshRate() ) );
     text.append( "\n" );
     text.append( tr("Display Vendor: XXXXXXX \n") );
     text.append( tr("Display Model:  XXXXXXX \n") );
@@ -300,6 +308,43 @@ QString LagTest::getOS()
     ERROR UNDEFINED SYSTEM
 #endif
     return "UNKNOWN OS";
+}
+
+double LagTest::getRefreshRate()
+{
+#ifdef Q_OS_WIN
+    DEVMODE dm;
+    // initialize the DEVMODE structure
+    ZeroMemory(&dm, sizeof(dm));
+    dm.dmSize = sizeof(dm);
+    if (0 != EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dm))
+    {
+        return (double) dm.dmDisplayFrequency;
+    }
+//#elif defined( Q_OS_LINUX )
+
+    QString param("xrandr");
+
+    QProcess xrandr;
+        xrandr.start("xrandr");
+        if (!xrandr.waitForStarted()){
+            qDebug("Calling xrandr failed!");
+            return -1;
+        }
+        xrandr.waitForFinished();
+        QByteArray result = xrandr.readAll();
+        int pos = result.indexOf( "*" );
+        if( pos < 0 ){
+            qDebug("Parsing xrandr output failed!");
+            return -1;
+        }
+
+        QByteArray rr = result.mid(pos-4, pos);
+        return rr.toDouble();
+#else
+    ERROR UNDEFINED SYSTEM
+#endif
+    return -1.0;
 }
 
 void LagTest::recvFlashArduino()

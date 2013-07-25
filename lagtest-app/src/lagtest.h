@@ -43,6 +43,7 @@ public slots:
 
 protected:
     QString getOS();
+    double getRefreshRate();
     void disableVsync();
     void restoreVsync();
     bool loadSettings();
