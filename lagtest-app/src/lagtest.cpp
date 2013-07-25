@@ -11,6 +11,7 @@
 #include "rs232.h"
 #include <QPlainTextEdit>
 #include <qapplication.h>
+#include <window.h>
 
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
@@ -240,7 +241,7 @@ void LagTest::generateReport()
     text.append( tr("Operating System:  %1 \n").arg(this->getOS()) );
     text.append( tr("Desktop resolution:  %1x%2 \n").arg( (QApplication::desktop())->width() ).arg((QApplication::desktop())->height()) );
     text.append( tr("Desktop Color Depth:  %1 Bit \n").arg( (QApplication::desktop())->depth() ) );
-    text.append( tr("Display Refresh Rate:  %.2f Hz \n").arg( this->getRefreshRate() ) );
+    text.append( tr("Display Refresh Rate:  %1 Hz \n").arg( this->getRefreshRate() ) );
     text.append( "\n" );
     text.append( tr("Display Vendor: XXXXXXX \n") );
     text.append( tr("Display Model:  XXXXXXX \n") );
@@ -321,10 +322,7 @@ double LagTest::getRefreshRate()
     {
         return (double) dm.dmDisplayFrequency;
     }
-//#elif defined( Q_OS_LINUX )
-
-    QString param("xrandr");
-
+#elif defined( Q_OS_LINUX )
     QProcess xrandr;
         xrandr.start("xrandr");
         if (!xrandr.waitForStarted()){
@@ -332,15 +330,19 @@ double LagTest::getRefreshRate()
             return -1;
         }
         xrandr.waitForFinished();
-        QByteArray result = xrandr.readAll();
+        QString result = QString( xrandr.readAll() );
+
+	//Test String
+	//result = "Screen 0: minimum 64 x 64, current 1920 x 1200, maximum 32000 x 320 VBOX0 connected 1920x1200+0+0 0mm x 0mm   1920x1200      123.0*+    1600x1200      60.0     1440x1050      60.0 "; 
+
         int pos = result.indexOf( "*" );
         if( pos < 0 ){
             qDebug("Parsing xrandr output failed!");
             return -1;
         }
 
-        QByteArray rr = result.mid(pos-4, pos);
-        return rr.toDouble();
+        result = result.mid(pos-5, 5);
+        return result.toDouble();
 #else
     ERROR UNDEFINED SYSTEM
 #endif
