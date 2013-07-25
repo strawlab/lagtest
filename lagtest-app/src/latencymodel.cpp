@@ -137,6 +137,10 @@ void LatencyModel::addLatency(double newLatency)
 {
     double t;
 
+    // Not process invalid latencies ( or if no latency was calcualted )
+    if( newLatency < 0)
+        return;
+
     latencyCnt = (latencyCnt+1) % latencyHistorySize;
     this->latency[this->latencyCnt] = newLatency;
 
@@ -152,7 +156,7 @@ void LatencyModel::addLatency(double newLatency)
     this->avgLatency; //Scale to ms
     //Filter too high avgLatency values
     if( avgLatency > 1000 ){
-        qErrnoWarning( "avgLat = %g , t=%g, latHist = %d" , avgLatency, t, latencyHistorySize );
+        qErrnoWarning( "newLat %g , avgLat = %g , t=%g, latHist = %d" , newLatency, avgLatency, t, latencyHistorySize );
         avgLatency = - 1.0;
     }
 
@@ -174,6 +178,7 @@ double LatencyModel::calculateLatency()
 
     if( this->detectdisplacedSensor() )
     {
+        this->resetHistory();
         emit signalInvalidLatency();
         return -1;
     }

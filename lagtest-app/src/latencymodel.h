@@ -15,7 +15,7 @@ public:
     explicit LatencyModel(int ms_updateRate, TimeModel* tm, RingBuffer<screenFlip>* screenFlips, RingBuffer<clockPair>* clock_storage, RingBuffer<adcMeasurement>* adc_storage);
     void resetHistory();
 
-    const static int latencyHistorySize = 5;
+    const static int latencyHistorySize = 10;
     const static int latencyStableSize = 5;
     const static int flipHistorySize = 5;
     const static int measurementWindowSize = 200; //Take X adc samples before and after the screen flip
