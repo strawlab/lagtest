@@ -313,7 +313,7 @@ void Window::receiveNewMeasurementWindow(uint8_t* window, double *avgWindow, dou
     for(int j=0; j < LatencyModel::measurementWindowSize; j++)
     {
         this->yData[j] = window[j];
-        this->xData[j] = time[j] / 1000000.0;
+        this->xData[j] = time[j];
     }
     updateCurveIdx[type] = (updateCurveIdx[type]+1)%nCurves;
     this->curves[type][this->updateCurveIdx[type]]->setSamples( xData, yData, LatencyModel::measurementWindowSize );
@@ -330,11 +330,11 @@ void Window::receiveLatencyUpdate(LatencyModel* lm)
     QString str;
     double ll,al;
     ll = lm->getLastLatency();
-    al = lm->getAvgLatency() / 1e6;
+    al = lm->getAvgLatency();
 
     this->msg->setText( "Found a Latency of" );
     //this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f|%.2f ms", ll/1000000.0, al, lm->getAvgLatencySD()/1000000.0) );
-    this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f ms", ll/1000000.0, al) );
+    this->latency->setText( str.sprintf("Last Latency %.2f ms , Avg. Latency %.2f ms", ll, al) );
 
     double x[2], y[2];
     double ymin, ymax;

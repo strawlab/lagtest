@@ -136,6 +136,7 @@ void LatencyModel::update()
 void LatencyModel::addLatency(double newLatency)
 {
     double t;
+
     latencyCnt = (latencyCnt+1) % latencyHistorySize;
     this->latency[this->latencyCnt] = newLatency;
 
@@ -148,6 +149,12 @@ void LatencyModel::addLatency(double newLatency)
         t += latency[i];
     }
     this->avgLatency = t / latencyHistorySize;
+    this->avgLatency; //Scale to ms
+    //Filter too high avgLatency values
+    if( avgLatency > 1000 ){
+        qErrnoWarning( "avgLat = %g , t=%g, latHist = %d" , avgLatency, t, latencyHistorySize );
+        avgLatency = - 1.0;
+    }
 
     t = 0;
     for(int i=0; i < latencyHistorySize; i++){
@@ -334,7 +341,7 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
         //last entry in the ringbuffer is the sample closest in time to the screen flip
         if( this->tm->toLocalTime(s) > sf.local ){
             found = true;
-            this->adc->seek( -40 );
+            this->adc->seek( -40 ); //Show sensor values before the flip
             this->adc->get(&s);
             //qDebug("For flip at %g using measurements starting from %g. Following %d unread elements" , sf.local, this->tm->toLocalTime(s), this->adc->unread() );
         }
@@ -353,13 +360,13 @@ bool LatencyModel::findMeasurementWindow(screenFlip sf )
         this->measurementCnter[ sf.type ] = (this->measurementCnter[ sf.type ]+1) % measurementHistoryLength;
 
         this->adcData[sf.type][this->measurementCnter[sf.type]][0] = s.adc;
-        this->sampleTimes[0] = this->tm->toLocalTime(s) - sf.local;
+        this->sampleTimes[0] = (this->tm->toLocalTime(s) - sf.local)/1e6;
 
         for(i=1; i < measurementWindowSize; i++){
             if( this->adc->get( &tsample  ) )
             {
                 this->adcData[sf.type][this->measurementCnter[sf.type]][i] = tsample.adc;
-                this->sampleTimes[i] = this->tm->toLocalTime( tsample ) - sf.local;
+                this->sampleTimes[i] = (this->tm->toLocalTime( tsample ) - sf.local) / 1e6;
                 //qDebug("E: %g, T: %g, D: %d", tsample.arduino_epoch, tsample.arduino_ticks, tsample.adc);
             } else {
                 qCritical("Not enough data in the ADC ringbuffer");
