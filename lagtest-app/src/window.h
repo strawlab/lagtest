@@ -79,9 +79,11 @@ protected:
     QTimer* timer;
     TimeModel *clock;
     RingBuffer<screenFlip> *store;
+    void mousePressEvent(QMouseEvent *event);
 
 signals:
     void setLed(bool turnOn);
+    void clicked();
 
 public slots:
     void flipColor();
@@ -120,6 +122,7 @@ public slots:
     void quit();
     void recvOpenHelpPage();
     void rcvShowAbout();    
+    void rcvClick();
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event);

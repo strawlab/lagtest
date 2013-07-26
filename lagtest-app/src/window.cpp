@@ -57,6 +57,7 @@ Window::Window(TimeModel *tm, RingBuffer<screenFlip> *screenFlips) :
     connect( this, SIGNAL(stop()), flipWindow, SLOT(receiveStop()) );
 
     connect( flipWindow, SIGNAL(setLed(bool)), this, SIGNAL(setLed(bool)) );
+    connect( flipWindow, SIGNAL(clicked()), this, SLOT( rcvClick()) );
 
     flipWindow->resize(150, 140);
     flipWindow->show();
@@ -368,6 +369,13 @@ void Window::receiveLatencyUpdate(LatencyModel* lm)
 
 }
 
+void Window::rcvClick()
+{
+    if( this->isRunning )
+        emit stopMeasurement();
+    else
+        emit startMeasurement();
+}
 
 void Window::recvOpenHelpPage(){
     QString url = tr("http://lagtest.org/app-help/%1").arg(QCoreApplication::applicationVersion());
@@ -385,7 +393,6 @@ SubWindow::SubWindow(QWidget* parent) : QWidget( parent , Qt::Window ) {}
 // ########################################################################################################
 
 
-//flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel* clock, RingBuffer<screenFlip> *store) :
 flashingBGQPaint::flashingBGQPaint(int flipRate, TimeModel *clock, RingBuffer<screenFlip> *store, QGLFormat &fmt, QWidget* parent) :
     //QWidget(0),
     QGLWidget(fmt, parent),
@@ -452,12 +459,12 @@ void flashingBGQPaint::paintEvent(QPaintEvent *event)
     {
         painter.setFont( QFont("Times", 10, QFont::Bold) );
         painter.setPen( Qt::red );
-        painter.drawText(r, Qt::AlignTop | Qt::AlignHCenter, tr("Stop by pressing Space Bar"));
+        painter.drawText(r, Qt::AlignTop | Qt::AlignHCenter, tr("Stop by pressing Space Bar or Clicking"));
 
     } else {
         painter.setFont( QFont("Times", 20, QFont::Bold) );
         painter.setPen( Qt::red );
-        painter.drawText(r, Qt::AlignCenter, tr("Start by pressing Space Bar"));
+        painter.drawText(r, Qt::AlignCenter, tr("Start by pressing Space Bar or Clicking"));
     }
 
     this->store->put( &sf );    
@@ -473,4 +480,12 @@ void flashingBGQPaint::receiveStop(){
     this->timer->stop();
     this->drawWhiteBG = false;
     emit update();
+}
+
+
+void flashingBGQPaint::mousePressEvent(QMouseEvent *event)
+{
+    if (event->buttons() & Qt::LeftButton){
+        this->clicked();
+    }
 }
