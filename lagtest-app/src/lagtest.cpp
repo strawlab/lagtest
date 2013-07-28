@@ -259,7 +259,7 @@ void LagTest::generateReport()
     qDebug("Report: \n%s", text.toStdString().c_str());
 
 
-    QString fileName = QFileDialog::getSaveFileName(0, tr("Save Report"), "LagTestReport", tr("Text File (*.txt)"));
+    QString fileName = QFileDialog::getSaveFileName(0, tr("Save Report"), "LagTestReport.txt", tr("Text File (*.txt)"));
 
     QFile f(fileName);
     if( f.open( QIODevice::WriteOnly | QIODevice::Text ) )
