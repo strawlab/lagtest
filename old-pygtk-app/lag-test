@@ -41,26 +41,33 @@ TRIM_DT = 60.0 # trim accummulated data every minute
 class NoValidSerialError(serial.serialutil.SerialException):
     pass
 
+def _list_ports():
+    try:
+        ports = []
+        from serial.tools import list_ports
+        for path,name,desc in list_ports.comports():
+            if 'USB' in path:
+                ports.append(path)
+            elif '2341:0043' in desc:
+                ports.append(path)
+    except ImportError:
+        usbs = ['/dev/ttyUSB%d' % i for i in range(10)]
+        acms = ['/dev/ttyACM%d' % i for i in range(10)]
+        ports = [i for i in usbs+acms if os.path.exists(i)]
+
+    if not ports or os.environ.get("LAG_TEST_FAKE"):
+        ports.append('/dev/null')
+
+    return ports
+
+
 def _setup_serial():
-    #raise NoValidSerialError
-    port = os.environ.get('LAG_TEST_PORT', None)
-    if port is not None:
-        if port.strip() == '/dev/null':
-            raise NoValidSerialError()
+    port = os.environ.get('LAG_TEST_PORT')
+    if port:
         ports = [port]
     else:
-        if sys.platform.startswith('linux'):
-            ports = ['/dev/ttyUSB0',
-                     '/dev/ttyUSB1',
-                     '/dev/ttyACM0',
-                     '/dev/ttyACM1',
-                     '/dev/ttyACM2',
-                     '/dev/ttyACM3',
-                     ]
-        else:
-            raise RuntimeError('Do not know default serial ports on your '
-                               'platform. Set environment variable '
-                               'LAG_TEST_PORT.')
+        ports = _list_ports()
+
     ser = None
     for port in ports:
         try:
@@ -230,7 +237,10 @@ class MyApp:
     def __init__(self):
         b = self.builder = Gtk.Builder()
         b.add_from_file("window.ui")
-        b.connect_signals(self)
+#        b.connect_signals(self)
+        cb = b.get_object("serial_cb")
+        for p in _list_ports():
+            cb.append_text(p)
 
         w = self.window = b.get_object("window1")
         w.connect("delete-event", Gtk.main_quit)
