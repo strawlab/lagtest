@@ -42,8 +42,11 @@ class NoValidSerialError(serial.serialutil.SerialException):
     pass
 
 def _setup_serial():
+    #raise NoValidSerialError
     port = os.environ.get('LAG_TEST_PORT', None)
     if port is not None:
+        if port.strip() == '/dev/null':
+            raise NoValidSerialError()
         ports = [port]
     else:
         if sys.platform.startswith('linux'):
@@ -51,6 +54,8 @@ def _setup_serial():
                      '/dev/ttyUSB1',
                      '/dev/ttyACM0',
                      '/dev/ttyACM1',
+                     '/dev/ttyACM2',
+                     '/dev/ttyACM3',
                      ]
         else:
             raise RuntimeError('Do not know default serial ports on your '
@@ -85,6 +90,10 @@ class SerialThread(threading.Thread):
         super(SerialThread,self).__init__(name=name)
         self.__args=args
         self.error = None
+        self.ser = None
+
+    def is_connected(self):
+        return (self.ser is not None) and (self.ser.isOpen())
 
     def set_led(self,value):
         char = chr(value)
@@ -104,12 +113,16 @@ class SerialThread(threading.Thread):
         try:
             self.ser = _setup_serial()
         except NoValidSerialError:
-            self.vq.put('Failed to detect USB. Generating fake data.')
-            raise
-        self.ser.open()
+            self.ser = None
+            self.vq.put('Failed to connect. Generating fake data.')
+        #    raise
+        #self.ser.open()
 
         buf = ''
         while 1:
+            if self.ser is None:
+                time.sleep(0.01)
+                continue
 
             # get all pending data
             while 1:
@@ -149,7 +162,7 @@ class SerialThread(threading.Thread):
         expected = 5
         if value!=expected:
             self.error = 'Expected firmware version %d, got %d'%(expected,value)
-
+            print value,expected
         assert value==expected
         self._vquery_time = time_func()
         self._version_check_done = True
@@ -216,7 +229,7 @@ class SerialThread(threading.Thread):
 class MyApp:
     def __init__(self):
         b = self.builder = Gtk.Builder()
-        b.add_from_file("lag-test-gtk.ui")
+        b.add_from_file("window.ui")
         b.connect_signals(self)
 
         w = self.window = b.get_object("window1")
@@ -239,16 +252,16 @@ class MyApp:
         self.lag_label = b.get_object("lag_label")
         self.current_luminance_label = b.get_object("current_luminance_label")
         self.device_status = b.get_object("device_status_label")
-        b.get_object('red_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('red')[1] )
-        b.get_object('green_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('green')[1] )
-        b.get_object('blue_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('blue')[1] )
+        #b.get_object('red_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('red')[1] )
+        #b.get_object('green_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('green')[1] )
+        #b.get_object('blue_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('blue')[1] )
 
         self.color_box = b.get_object("color_box")
         self.is_white = False
         _, self.black = Gdk.Color.parse('black')
         _, self.white = Gdk.Color.parse('white')
 
-        b.get_object("clear_data_button").connect("clicked", self.on_clear_data)
+        #b.get_object("clear_data_button").connect("clicked", self.on_clear_data)
         b.get_object("save_data_button").connect("clicked", self.on_save_data)
 
         self._last_canvas_update = 0
@@ -331,7 +344,7 @@ class MyApp:
             self.adcs.append( self.last_adc )
 
     def getdata(self):
-        if not self.ser_thread.is_alive():
+        if not self.ser_thread.is_connected():
             self.make_fake_data()
             return True
 
@@ -411,7 +424,7 @@ class MyApp:
         except IndexError:
             return
         t_crossover = t[idx]
-        self.lag_label.set_text('lag: %.1f msec'%(t_crossover))
+        self.lag_label.set_text('%.1f' % t_crossover)
 
         self.on_off_canvas.show_lag( t_crossover )
         self.off_on_canvas.show_lag( t_crossover )
@@ -421,8 +434,7 @@ class MyApp:
 
     def update_ui(self):
         self._update_plots()
-        self.current_luminance_label.set_text(
-            'current luminance: % 3d'%self.last_adc[1])
+        self.current_luminance_label.set_text('%d' % self.last_adc[1])
 
         while 1:
             try:
@@ -430,11 +442,12 @@ class MyApp:
             except Queue.Empty:
                 break
             else:
-                self.device_status.set_text('USB status: %s'%t)
+                self.device_status.set_text('%s' % t)
         return True
 
     def on_test_serial_thread(self):
-        if not self.ser_thread.is_alive():
+        return True
+        if not self.ser_thread.is_connected():
             dialog = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.ERROR,
                                        Gtk.ButtonsType.OK, "Arduino communication failed.")
             if self.ser_thread.error is not None:
