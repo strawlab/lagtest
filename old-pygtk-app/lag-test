@@ -256,8 +256,10 @@ class MyApp:
         self.ser_thread.start()
 
         self.lag_label = b.get_object("lag_label")
+        self.best_lag_label = b.get_object("best_lag_label")
         self.current_luminance_label = b.get_object("current_luminance_label")
         self.device_status = b.get_object("device_status_label")
+        
         #b.get_object('red_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('red')[1] )
         #b.get_object('green_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('green')[1] )
         #b.get_object('blue_box').modify_bg( Gtk.StateType.NORMAL, Gdk.Color.parse('blue')[1] )
@@ -267,7 +269,9 @@ class MyApp:
         _, self.black = Gdk.Color.parse('black')
         _, self.white = Gdk.Color.parse('white')
 
-        #b.get_object("clear_data_button").connect("clicked", self.on_clear_data)
+        b.get_object("clear_data_button").connect("clicked", self.on_clear_data)
+        self.submit_data_button = b.get_object("submit_data_button")
+        self.submit_data_button.connect("clicked", self.on_submit_data)
         b.get_object("save_data_button").connect("clicked", self.on_save_data)
 
         self._last_canvas_update = 0
@@ -278,13 +282,22 @@ class MyApp:
         self.on_off_canvas = LagPlotCanvas()
         box = b.get_object("on_off_plot_box")
         box.pack_start( self.on_off_canvas, True, True, 0 )
+        
+        from_gui_names = ['manufacturer', 'model', 'comments', 'username']
+        for name in from_gui_names:
+            setattr(self, 'ui_%s'%name, self.builder.get_object(name))
 
+        self._switches = None
+        self._times = None
+        self._adcs = None
+        self._t_crossover = None
         self.on_clear_data()
 
         w.show_all()
 
         GLib.timeout_add(100, self.getdata)
         GLib.timeout_add(1000, self.on_test_serial_thread)
+        GLib.timeout_add(1000, self.update_sensitivity)
         GLib.timeout_add(int(1000*DRAW_DT), self.update_ui)
         GLib.timeout_add(int(1000*SWITCH_DT), self.switch_color)
         GLib.timeout_add(int(1000*TRIM_DT), self.on_trim_data)
@@ -310,15 +323,31 @@ class MyApp:
             del self.adcs[-keep_n_samples]
         return True
 
-    def on_save_data(self, btn=None):
+    def update_sensitivity(self):
+        ok = self.ui_manufacturer.get_text() and \
+             self.ui_model.get_text() and \
+             self._t_crossover is not None
+        self.submit_data_button.set_sensitive(ok)
+        return True
+              
+
+    def on_save_data(self, btn):
+        self._adcs = tuple(self.adcs)
+        self._switches = tuple(self.switches)
+        self._times = tuple(self.times)
+        self._t_crossover = self.t_crossover
+        self.best_lag_label.set_text("%.1f" % self._t_crossover)
+
+    def on_submit_data(self, btn=None):
         fname = time.strftime( 'lagtest_%Y%m%d_%H%M%S.json' )
-        data = {'switches':self.switches,
-                'times':self.times,
-                'adcs':self.adcs,
+        data = {'switches':self._switches,
+                'times':self._times,
+                'adcs':self._adcs,
+                'latency':self._t_crossover,
                 }
         from_gui_names = ['manufacturer', 'model', 'comments', 'username']
         for name in from_gui_names:
-            data[name] = self.builder.get_object(name).get_text()
+            data[name] = getattr(self, 'ui_%s' % name).get_text()
         data['__version__'] = __version__
         data['__data_schema_version__'] = '1.0'
 
@@ -429,11 +458,11 @@ class MyApp:
             idx = np.nonzero(cond)[0][0]
         except IndexError:
             return
-        t_crossover = t[idx]
-        self.lag_label.set_text('%.1f' % t_crossover)
+        self.t_crossover = t[idx]
+        self.lag_label.set_text('%.1f' % self.t_crossover)
 
-        self.on_off_canvas.show_lag( t_crossover )
-        self.off_on_canvas.show_lag( t_crossover )
+        self.on_off_canvas.show_lag( self.t_crossover )
+        self.off_on_canvas.show_lag( self.t_crossover )
 
         self.on_off_canvas.draw()
         self.off_on_canvas.draw()
