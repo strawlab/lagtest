@@ -122,8 +122,6 @@ class SerialThread(threading.Thread):
         except NoValidSerialError:
             self.ser = None
             self.vq.put('Failed to connect. Generating fake data.')
-        #    raise
-        #self.ser.open()
 
         buf = ''
         while 1:
