@@ -167,7 +167,6 @@ class SerialThread(threading.Thread):
         expected = 5
         if value!=expected:
             self.error = 'Expected firmware version %d, got %d'%(expected,value)
-            print value,expected
         assert value==expected
         self._vquery_time = time_func()
         self._version_check_done = True
@@ -235,7 +234,6 @@ class MyApp:
     def __init__(self):
         b = self.builder = Gtk.Builder()
         b.add_from_file("window.ui")
-#        b.connect_signals(self)
         cb = b.get_object("serial_cb")
         for p in _list_ports():
             cb.append_text(p)
