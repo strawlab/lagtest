@@ -64,7 +64,8 @@ if 1:
 
             t = time_model.framestamp2timestamp(
                 data['adcs']['time_ino'][idx_start:idx_stop])
-        t = (t-t[WIDTH])*1000.0
+        scale_time = 1000.0
+        t = (t-t[WIDTH])*scale_time
         m0 = np.mean( accum[0], axis=0 )
         m1 = np.mean( accum[1], axis=0 )
 
@@ -90,6 +91,10 @@ if 1:
         cond = m0 < m1
         idx = np.nonzero(cond)[0][0]
         t_crossover = t[idx]
+
+        mean_dt = np.mean(t[1:]-t[:-1])/scale_time
+        mean_freq = 1.0/mean_dt
+        print 'samples per sec',mean_freq
 
         ax1.axvline( t_crossover )
         ax2.axvline( t_crossover )

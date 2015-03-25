@@ -12,6 +12,11 @@ class LagPlotCanvas(FigureCanvasGTK3Agg):
         self.ax.set_xlim(-10,90)
         self.ax.set_xlabel('time (milliseconds)')
         self.ax.set_ylabel('luminance (ADC units)')
+       
+        COLOR = '#ededed'
+        self.ax.patch.set_facecolor(COLOR)#set_backgroundcolor(self.ax, 'red')
+        self.fig.patch.set_facecolor(COLOR)
+
         self.did_once = False
         self.vline = None
 

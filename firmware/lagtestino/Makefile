@@ -3,6 +3,6 @@
 # see https://github.com/sudar/Arduino-Makefile/
 
 ARDUINO_DIR = /usr/share/arduino
-ARDUINO_PORT = /dev/ttyACM1
+ARDUINO_PORT = /dev/ttyACM*
 ARDUINO_LIBS =
 include /usr/share/arduino/Arduino.mk

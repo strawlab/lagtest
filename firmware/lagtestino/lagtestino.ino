@@ -40,7 +40,8 @@ volatile uint8_t new_adc_sample=0;
 
 // Global variable for clock measurement ---------------------------------------
 volatile epoch_dtype epoch=0;
-volatile uint8_t tit = 0;
+
+#define CLAMP255( val ) (val) > 255 ? 255 : (val);
 
 // Interrupt service routine for new analog sample ready -----------------------
 ISR(ADC_vect)
@@ -49,14 +50,8 @@ ISR(ADC_vect)
     accum += ADCH;
     n_samples++;
 
-    if( tit++ % 2){
-          digitalWrite(7, 1);
-        } else {
-          digitalWrite(7, 0);
-        }
-
     if (n_samples >= max_n_samples) {
-        adc_sample.value = 0x0FF & (accum >> log2_n_samples); // Clamp sample to [0, 255]
+        adc_sample.value = CLAMP255(accum);
 
         // stamp data with current timestamp
         adc_sample.epoch = epoch;
@@ -67,14 +62,7 @@ ISR(ADC_vect)
 
         new_adc_sample=1;
 
-        if( tit++ % 2){
-          digitalWrite(2, 1);
-        } else {
-          digitalWrite(2, 0);
-        }
     }
-
-
 
 }
 
@@ -103,16 +91,18 @@ void setup_adc() {
 
     ADMUX = 0;                // Use ADC0.
     ADMUX |= (1 << REFS0);    // Use AVcc as the reference.
-    ADMUX |= (1 << ADLAR);    // Set right adjust -> reading ADCH after
-                              // convertion will read the higher eight
-                              // bits only ( i.e dividing the result by 4 ).
+    ADMUX |= (1 << ADLAR);    // Set left adjust -> reading ADCH after
+                              // conversion will read the higher eight
+                              // bits ( i.e dividing the result by 4 ).
+
+    ADCSRA = 0;
 
     ADCSRA |= (1 << ADATE);   // Set free running mode
     ADCSRA |= (1 << ADEN);    // Enable the ADC
     ADCSRA |= (1 << ADIE);    // Enable Interrupts
+    ADCSRA |= ( 1 << ADPS2 ) | ( 1 << ADPS1 ); // Clock prescaler 64.
 
     ADCSRA |= (1 << ADSC);    // Start the ADC conversion
-
     sei();
 }
 
@@ -134,9 +124,9 @@ void setup() {
 
 // Send data with our simple protocol to the host computer ---------------------
 static inline void send_data(const timed_sample_t samp, const char header) {
-    const char * buf;
+    const uint8_t * buf;
     Serial.write(header);
-    buf = (const char*)&(samp);
+    buf = (const uint8_t*)&(samp);
     uint8_t chksum=0;
     for (uint8_t i=0; i< sizeof(timed_sample_t); i++) {
         chksum += buf[i];
@@ -185,18 +175,12 @@ void loop() {
 
             SREG = SaveSREG_; // restore interrupt flags
 
-            if (value%2) {
-                digitalWrite(LEDPin,HIGH); // turn LED on
-            } else {
-                digitalWrite(LEDPin,LOW); // turn LED off
-            }
-
             send_data(timestamp_request,'P');
         } else if (cmd=='V') {
 
             static timed_sample_t version_request;
 
-            version_request.value = 3;
+            version_request.value = 5;
 
             uint8_t SaveSREG_ = SREG;   // save interrupt flag
             cli(); // disable interrupts
