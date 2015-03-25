@@ -38,6 +38,8 @@ SWITCH_DT = 0.5 # switch black/white twice per second
 PLOT_DT = 0.5 # update plots twice per second
 TRIM_DT = 60.0 # trim accummulated data every minute
 
+FAKE_DATA_PORT = 'FAKE DATA'
+
 class NoValidSerialError(serial.serialutil.SerialException):
     pass
 
@@ -55,33 +57,9 @@ def _list_ports():
         acms = ['/dev/ttyACM%d' % i for i in range(10)]
         ports = [i for i in usbs+acms if os.path.exists(i)]
 
-    if not ports or os.environ.get("LAG_TEST_FAKE"):
-        ports.append('/dev/null')
+    ports.append(FAKE_DATA_PORT)
 
     return ports
-
-
-def _setup_serial():
-    port = os.environ.get('LAG_TEST_PORT')
-    if port:
-        ports = [port]
-    else:
-        ports = _list_ports()
-
-    ser = None
-    for port in ports:
-        try:
-            ser = serial.Serial(port=port,
-                                timeout=0.01,
-                                baudrate=115200,
-                                )
-        except serial.serialutil.SerialException:
-            continue
-        else:
-            break
-    if ser is None:
-        raise NoValidSerialError('Could not find serial port at any of %r'%ports)
-    return ser
 
 def make_recarray( orig, n0, n1 ):
     arr0 = np.array([row[0] for row in orig])
@@ -98,6 +76,22 @@ class SerialThread(threading.Thread):
         self.__args=args
         self.error = None
         self.ser = None
+
+    def connect(self, port):
+        if self.ser is not None:
+            try:
+                self.ser.close()
+                self.ser = None
+            except:
+                pass
+
+        try:
+            self.ser = serial.Serial(port=port,
+                                     timeout=0.01,
+                                     baudrate=115200)
+        except serial.serialutil.SerialException:
+            self.ser = None
+            self.vq.put('Failed to connect. Generating fake data.')
 
     def is_connected(self):
         return (self.ser is not None) and (self.ser.isOpen())
@@ -116,12 +110,6 @@ class SerialThread(threading.Thread):
         self._version_check_done = False
 
         self.adc_q, self.time_q, self.outq, self.vq = self.__args
-
-        try:
-            self.ser = _setup_serial()
-        except NoValidSerialError:
-            self.ser = None
-            self.vq.put('Failed to connect. Generating fake data.')
 
         buf = ''
         while 1:
@@ -238,6 +226,8 @@ class MyApp:
         for p in _list_ports():
             cb.append_text(p)
 
+        cb.connect("changed", self.on_combo_changed)
+
         w = self.window = b.get_object("window1")
         w.connect("delete-event", Gtk.main_quit)
 
@@ -249,6 +239,7 @@ class MyApp:
 
         self.times = []
 
+        self.tried_to_connect = None
         self.ser_thread = SerialThread(name="serial thread",
                                        args=(self.adc_q,self.time_q,
                                              self.outq,self.vq))
@@ -301,6 +292,12 @@ class MyApp:
         GLib.timeout_add(int(1000*DRAW_DT), self.update_ui)
         GLib.timeout_add(int(1000*SWITCH_DT), self.switch_color)
         GLib.timeout_add(int(1000*TRIM_DT), self.on_trim_data)
+
+    def on_combo_changed(self, cb):
+        port = cb.get_active_text()
+        self.tried_to_connect = port
+        if self.tried_to_connect != FAKE_DATA_PORT:
+            self.ser_thread.connect(port)
 
     def on_clear_data(self, btn=None):
         self.switches = []
@@ -379,7 +376,7 @@ class MyApp:
             self.adcs.append( self.last_adc )
 
     def getdata(self):
-        if not self.ser_thread.is_connected():
+        if self.tried_to_connect == FAKE_DATA_PORT:
             self.make_fake_data()
             return True
 
@@ -481,8 +478,10 @@ class MyApp:
         return True
 
     def on_test_serial_thread(self):
-        return True
-        if not self.ser_thread.is_connected():
+        if self.tried_to_connect is not None \
+           and (self.tried_to_connect != FAKE_DATA_PORT) \
+           and not self.ser_thread.is_connected():
+
             dialog = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.ERROR,
                                        Gtk.ButtonsType.OK, "Arduino communication failed.")
             if self.ser_thread.error is not None:
