@@ -71,11 +71,24 @@ def make_recarray( orig, n0, n1 ):
     return result
 
 class SerialThread(threading.Thread):
-    def __init__(self,name,args):
+    def __init__(self,name,adc_q,time_q,outq,vq):
         super(SerialThread,self).__init__(name=name)
-        self.__args=args
+        self.adc_q = adc_q
+        self.time_q = time_q
+        self.outq = outq
+        self.vq = vq
         self.error = None
         self.ser = None
+        self.serlock = threading.Lock()
+
+    def _reset(self):
+        self.last_time = time_func() + 0.5 # give half a second to flush buffers
+        self._qi = 0
+        self._queries = OrderedDict()
+
+        self._vquery_time = time_func() + 2.5
+        self._version_check_started = False
+        self._version_check_done = False
 
     def connect(self, port):
         if self.ser is not None:
@@ -86,9 +99,11 @@ class SerialThread(threading.Thread):
                 pass
 
         try:
-            self.ser = serial.Serial(port=port,
-                                     timeout=0.01,
-                                     baudrate=115200)
+            with self.serlock:
+                self.ser = serial.Serial(port=port,
+                                         timeout=0.01,
+                                         baudrate=115200)
+                self._reset()
         except serial.serialutil.SerialException:
             self.ser = None
             self.vq.put('Failed to connect. Generating fake data.')
@@ -101,29 +116,18 @@ class SerialThread(threading.Thread):
         self.ser.write('L'+char)
 
     def run(self):
-        self.last_time = time_func() + 0.5 # give half a second to flush buffers
-        self._qi = 0
-        self._queries = OrderedDict()
-
-        self._vquery_time = time_func()+2.5
-        self._version_check_started = False
-        self._version_check_done = False
-
-        self.adc_q, self.time_q, self.outq, self.vq = self.__args
-
         buf = ''
         while 1:
-            if self.ser is None:
+            with self.serlock:
+                waiting = self.ser is None
+
+            if waiting:
                 time.sleep(0.01)
                 continue
 
-            # get all pending data
-            while 1:
-                try:
-                    led_value = self.outq.get_nowait()
-                    self.set_led(led_value)
-                except Queue.Empty:
-                    break
+            if not self._version_check_done:
+                if not self._version_check_started:
+                    self.vq.put('checking...')
 
             buf += self.ser.read()
             while len(buf) >= 9:
@@ -140,13 +144,20 @@ class SerialThread(threading.Thread):
                 self._qi = (self._qi + 1) % 256
                 self.last_time = now
 
+            # led state
+            while 1:
+                try:
+                    led_value = self.outq.get_nowait()
+                    self.set_led(led_value)
+                except Queue.Empty:
+                    break
+
             # version check
             if not self._version_check_done:
                 if not self._version_check_started:
                     if now >= self._vquery_time:
                         self.ser.write( 'V?' )
                         self._version_check_started = True
-                        self.vq.put('checking...')
 
                 if (now - self._vquery_time) > 2.5:
                     self.vq.put('no response')
@@ -158,7 +169,7 @@ class SerialThread(threading.Thread):
         assert value==expected
         self._vquery_time = time_func()
         self._version_check_done = True
-        self.vq.put('OK')
+        self.vq.put('OK (version %d)' % value)
 
     def _handle_returned_timestamp(self, qi, epoch, counter):
         now = time_func()
@@ -240,9 +251,8 @@ class MyApp:
         self.times = []
 
         self.tried_to_connect = None
-        self.ser_thread = SerialThread(name="serial thread",
-                                       args=(self.adc_q,self.time_q,
-                                             self.outq,self.vq))
+        self.ser_thread = SerialThread("serial thread",
+                                       self.adc_q,self.time_q,self.outq,self.vq)
         self.ser_thread.daemon = True
         self.ser_thread.start()
 
