@@ -3,6 +3,7 @@
 # see https://github.com/sudar/Arduino-Makefile/
 
 ARDUINO_DIR = /usr/share/arduino
-ARDUINO_PORT = /dev/ttyACM*
+ARDUINO_PORT = /dev/ttyUSB*
+BOARD_TAG = nano328
 ARDUINO_LIBS =
 include /usr/share/arduino/Arduino.mk

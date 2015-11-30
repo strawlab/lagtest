@@ -27,7 +27,6 @@ our official clock.
 #include "lagtest_datatypes.h"
 
 // Pin numbers -----------------------------------------------------------------
-#define analogPin 0
 #define LEDPin 13
 
 // Global variables for ADC ----------------------------------------------------
