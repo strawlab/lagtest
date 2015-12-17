@@ -302,6 +302,15 @@ class MyApp:
         GLib.timeout_add(int(1000*DRAW_DT), self.update_ui)
         GLib.timeout_add(int(1000*SWITCH_DT), self.switch_color)
         GLib.timeout_add(int(1000*TRIM_DT), self.on_trim_data)
+        GLib.timeout_add(2000, self.autoconnect)
+
+    def autoconnect(self, *args):
+        port = '/dev/ttyUSB2'
+        self.tried_to_connect = port
+        if self.tried_to_connect != FAKE_DATA_PORT:
+            self.ser_thread.connect(port)
+        return False
+
 
     def on_combo_changed(self, cb):
         port = cb.get_active_text()
@@ -473,6 +482,8 @@ class MyApp:
 
         self.on_off_canvas.draw()
         self.off_on_canvas.draw()
+
+        print self.t_crossover
 
     def update_ui(self):
         self._update_plots()
